@@ -3,7 +3,10 @@ var recreateLessons = false,
 	currentLessonName = 'top100',
 	currentLesson,
 	currentQuestion,
-	correctAnswersThreshold = 10;
+	correctAnswersThreshold = 10,
+	liveData= {
+		knownWords: 0
+	}
 
 function $$(id) {
     return document.getElementById(id);
@@ -53,16 +56,37 @@ function lastCorrectAnswers() {
     return ret;
 }
 
+function isWordLearnt() {
+	return lastCorrectAnswers.call(this) >= correctAnswersThreshold;
+}
+
+function updateLearntScore(count) {
+	isUndef(count) && (count = 1);
+	liveData.knownWords += count;
+	$('#known_words').text(liveData.knownWords);
+}
+
 function showExcludedWords() {
 	alert(
 	currentLesson
-		.slice()
 		.filter(function(word) {
-			return lastCorrectAnswers.call(word) >= correctAnswersThreshold
+			return isWordLearnt.call(word)
 		})
 		.map(function(word) {return [word.q, word.a].join(' - ')})
 		.join(', ')
 	)
+}
+
+function wordsAlreadyKnown() {
+	var count = 0;
+	for (lessonName in lessons) {
+		lessons[lessonName].forEach(function(word) {
+			console.log(isWordLearnt.call(word), word);
+			isWordLearnt.call(word) && (count+=1);
+		})
+	}
+	updateLearntScore(count)
+	
 }
 
 function storeLesson(lessonName, lesson) {
@@ -188,14 +212,18 @@ $$('f_answer').onsubmit = function() {
 	var answer = $$('answer').value;
 	
     if (answer && currentQuestion.a.indexOf(answer)>=0 ) {
+
         var li = document.createElement('li')
         li.className = 'si'
         li.innerHTML = [currentQuestion.q, currentQuestion.a].join(' - ');
         $$('log_si').insertBefore(li, $$('log_si').firstChild)
-        
+                
         currentQuestion.score || (currentQuestion.score = []);
         currentQuestion.score.push([+new Date, 1]);
         saveLessons();
+        
+        isWordLearnt.call(currentQuestion) && updateLearntScore();
+
     }
     else {
         var li = document.createElement('li')
@@ -242,6 +270,7 @@ $$('lesson_switcher').onchange = function() {
 		case '__new__':
 		currentLessonName = prompt('Type a name for the lesson');
 		storeLesson(currentLessonName, createLesson());
+		initLesson();
 		editMode();
 		break;
 		
@@ -263,16 +292,16 @@ $$('lesson_switcher').onchange = function() {
 		
 		default:
 		currentLessonName = this.value;
+		initLesson();
 		break;
 		
 	}
-	
-	initLesson();
-	
+		
 };
 
 function init() {
 	initStorage();
+	wordsAlreadyKnown();
 	initLesson();
 }
 

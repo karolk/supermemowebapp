@@ -23,6 +23,11 @@ input {
     width: 98%;
 }
 
+.status {
+	color: #AAA;
+	font-size: 100%;
+}
+
 .input_pairs input {
 	width: 48%;
 }
@@ -82,7 +87,7 @@ button.check {
 <option value="__edit__">Add words...</option>
 <option value="__delete__">Delete current set...</option>
 <option value="__find__">Find word...</option>
-<option value="__showexcluced__">Show excluded words...</option>
+<option value="__showexcluced__">Show words I learnt...</option>
 </optgroup>
 </select></p>
 
@@ -97,6 +102,8 @@ button.check {
 
 <ul id="log_si"></ul>
 <ul id="log_no"></ul>
+
+<p class="status">Known words: <span id="known_words"></span></p>
 </div>
 
 <div id="adding" class="screen nodisplay">
