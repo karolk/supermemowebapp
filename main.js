@@ -3,7 +3,7 @@ var recreateLessons = false,
 	currentLessonName = 'top100',
 	currentLesson,
 	currentQuestion,
-	correctAnswersThreshold = 10,
+	correctAnswersBeforeMemorised = 10,
 	liveData= {
 		knownWords: 0
 	}
@@ -57,17 +57,34 @@ function saveLessons() {
 	localStorage.setItem( 'lessons', JSON.stringify(lessons) )
 }
 
-function lastCorrectAnswers() {
-	var ret = 0;
-	if (!this.score || !this.score.length) {
-		return ret;
-	}
-	this.score.forEach(function(sc) {ret+=sc[1]});
-    return ret;
-}
-
-function isWordLearnt() {
-	return lastCorrectAnswers.call(this) >= correctAnswersThreshold;
+function isQABeingForgotten(qa) {
+	
+	var ret = false,
+		correctAnswers = qa.score
+			.filter(function(ans) {return !!ans[1]}),
+		correctAnswersLen = correctAnswers.length,
+		cycleIndex = ~~(correctAnswersLen/correctAnswersBeforeMemorised),
+		previousCycleIndex = cycleIndex-1,
+		nowDS = +new Date,
+		previousCycleLastAnswerDS = cycleIndex>0 ? 
+			correctAnswers[(cycleIndex * correctAnswersBeforeMemorised - 1)][0] :
+			null;
+		
+		if (previousCycleLastAnswerDS) {
+			var nextCycleStartDS = previousCycleLastAnswerDS +
+				conf.intervals[cycleIndex] * conf.millsec.day;
+			//if it's later or same than the nextCycleStartDS
+			if (nowDS >= nextCycleStartDS) {
+				ret = true
+			}
+		}
+		//otherwise we are in the 1st memorisation phase
+		else {
+			ret = true
+		}
+	
+	return ret;
+	
 }
 
 function updateLearntScore(count) {
@@ -80,7 +97,7 @@ function showExcludedWords() {
 	alert(
 	currentLesson
 		.filter(function(word) {
-			return isWordLearnt.call(word)
+			return !isQABeingForgotten(word)
 		})
 		.map(function(word) {return [word.q, word.a].join(' - ')})
 		.join(', ')
@@ -91,7 +108,7 @@ function wordsAlreadyKnown() {
 	var count = 0;
 	for (lessonName in lessons) {
 		lessons[lessonName].forEach(function(word) {
-			isWordLearnt.call(word) && (count+=1);
+			isQABeingForgotten(word) || (count+=1);
 		})
 	}
 	updateLearntScore(count)
@@ -192,7 +209,7 @@ function drawQuestion() {
     	randomQuestion.score || (randomQuestion.score = []);
     	saveLessons();
     	
-    	if ( !isWordLearnt.call(randomQuestion) ) {
+    	if ( isQABeingForgotten(randomQuestion) ) {
     		ret = randomQuestion;
     	}
     	
@@ -218,6 +235,7 @@ function askQuestion(qa) {
     }
     
     if ( currentQuestion ) {
+    	lessonMode();
     	$('#question').text( currentQuestion.q );
     }    
     else {
@@ -242,7 +260,7 @@ $$('f_answer').onsubmit = function() {
         currentQuestion.score.push([+new Date, 1]);
         saveLessons();
         
-        isWordLearnt.call(currentQuestion) && updateLearntScore();
+        isQABeingForgotten(currentQuestion) || updateLearntScore();
 
     }
     else {
@@ -289,13 +307,20 @@ $('#populate_lesson').submit(function() {
 })
 
 $$('lesson_switcher').onchange = function() {
+	
 	switch (this.value) {
 		
 		case '__new__':
-		currentLessonName = prompt('Type a name for the lesson');
-		storeLesson(currentLessonName, createLesson());
-		initLesson();
-		editMode();
+		newLessonName = prompt('Type a name for the lesson');
+		if (newLessonName && !(newLessonName in lessons)) {
+			
+			currentLesson = createLesson();
+			currentLessonName = newLessonName;
+			storeLesson(currentLessonName, currentLesson);
+			
+			initLesson();
+			
+		}
 		break;
 		
 		case '__edit__':
@@ -303,7 +328,6 @@ $$('lesson_switcher').onchange = function() {
 		break;
 		
 		case '__delete__':
-		deleteLesson(currentLessonName);
 		break;
 		
 		case '__find__':
@@ -320,6 +344,8 @@ $$('lesson_switcher').onchange = function() {
 		break;
 		
 	}
+	
+	$('#lesson_switcher').val(currentLessonName);
 		
 };
 
