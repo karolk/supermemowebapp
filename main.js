@@ -91,7 +91,6 @@ function wordsAlreadyKnown() {
 	var count = 0;
 	for (lessonName in lessons) {
 		lessons[lessonName].forEach(function(word) {
-			console.log(isWordLearnt.call(word), word);
 			isWordLearnt.call(word) && (count+=1);
 		})
 	}
