@@ -8,6 +8,16 @@ var recreateLessons = false,
 		knownWords: 0
 	}
 
+//constructors
+
+function Lesson() {
+
+}
+
+function QA() {
+
+}
+
 function $$(id) {
     return document.getElementById(id);
 }
@@ -167,16 +177,11 @@ function initLesson() {
     askQuestion();
 }
 
-function askQuestion(attempt) {
+function drawQuestion() {
+
+	var ret = null;
 	
-    $$('answer').value = '', attempt = attempt || 0;
-    
-    if (attempt > correctAnswersThreshold*2) {
-    	alert('All words in this set were memorised');
-    	return;
-    }
-    
-    if (currentLesson.length) {
+	if (currentLesson.length) {
     	var randomQuestion = currentLesson[
     		Math.round(
     			Math.random()*(currentLesson.length-1)
@@ -184,23 +189,38 @@ function askQuestion(attempt) {
     		];
     	
     	//make sure score is there
+    	//remove soon
     	randomQuestion.score || (randomQuestion.score = []);
     	saveLessons();
     	
-    	
-    	
-    	if (lastCorrectAnswers.call(randomQuestion) >= correctAnswersThreshold) {
-    		askQuestion(++attempt);
-    		return;
+    	if ( !isWordLearnt.call(randomQuestion) ) {
+    		ret = randomQuestion;
     	}
-    	else {
-    		currentQuestion = randomQuestion;
-    	}
-    	
-    	$('#question').text(currentQuestion.q);
     	
     }
     
+	return ret;
+}
+
+function askQuestion(qa) {
+	
+    $('#answer').val('');
+    
+    currentQuestion = qa || drawQuestion();
+    
+    if ( !currentQuestion ) {
+    	for (var i=0; i<100; i++) {
+    		var randomQuestion = drawQuestion();
+    		if (randomQuestion) {
+    			currentQuestion = randomQuestion;
+    			break;
+    		}
+    	}
+    }
+    
+    if ( currentQuestion ) {
+    	$('#question').text( currentQuestion.q );
+    }    
     else {
     	editMode();
     }
@@ -209,7 +229,8 @@ function askQuestion(attempt) {
 
 $$('f_answer').onsubmit = function() {
 	
-	var answer = $$('answer').value;
+	var answer = $$('answer').value,
+		nextQuestion;
 	
     if (answer && currentQuestion.a.indexOf(answer)>=0 ) {
 
@@ -234,9 +255,13 @@ $$('f_answer').onsubmit = function() {
         currentQuestion.score || (currentQuestion.score = []);
         currentQuestion.score.push([+new Date, 0]);
         saveLessons();
+        
+        //remember to ask te same question again
+        nextQuestion = currentQuestion;
+        
     }
     
-    askQuestion();
+    askQuestion(nextQuestion);
     
     return false;
 }
@@ -305,4 +330,4 @@ function init() {
 	initLesson();
 }
 
-onload = init;
+onload = init
