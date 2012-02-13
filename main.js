@@ -8,8 +8,20 @@ var recreateLessons = false,
 		knownWords: 0
 	}
 
+function compatibilityFixes() {
+	//make sure score array is everywhere
+	for (lessonName in lessons) {
+		lessons[lessonName].forEach(function(qa) {
+			if (!qa.score) {
+				qa.score = [];
+			}
+		});
+	}
+	
+	saveLessons();
+	
+}
 //constructors
-
 function Lesson() {
 
 }
@@ -111,7 +123,7 @@ function wordsAlreadyKnown() {
 			isQABeingForgotten(word) || (count+=1);
 		})
 	}
-	updateLearntScore(count)
+	updateLearntScore(count);
 	
 }
 
@@ -256,7 +268,6 @@ $$('f_answer').onsubmit = function() {
         li.innerHTML = [currentQuestion.q, currentQuestion.a].join(' - ');
         $$('log_si').insertBefore(li, $$('log_si').firstChild)
                 
-        currentQuestion.score || (currentQuestion.score = []);
         currentQuestion.score.push([+new Date, 1]);
         saveLessons();
         
@@ -269,7 +280,6 @@ $$('f_answer').onsubmit = function() {
         li.innerHTML = [currentQuestion.q, currentQuestion.a].join(' - ');
         $$('log_no').insertBefore(li, $$('log_no').firstChild)
         
-        currentQuestion.score || (currentQuestion.score = []);
         currentQuestion.score.push([+new Date, 0]);
         saveLessons();
         
@@ -351,6 +361,7 @@ $$('lesson_switcher').onchange = function() {
 
 function init() {
 	initStorage();
+	compatibilityFixes();
 	wordsAlreadyKnown();
 	initLesson();
 }
