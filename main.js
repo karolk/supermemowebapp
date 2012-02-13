@@ -69,6 +69,37 @@ function saveLessons() {
 	localStorage.setItem( 'lessons', JSON.stringify(lessons) )
 }
 
+function importLesson(fileName, lessonName) {
+
+	$.get(fileName, function(response) {
+	
+		var chunks = response.split('\n'),
+			lesson=[],
+			qa;
+	
+		chunks.forEach(function(ch) {
+	
+			if ( ch.trim().toLowerCase().indexOf('q:')==0 ) {
+				qa={
+					q: ch.trim().substr(2)
+				}
+			}
+		
+			if( ch.trim().toLowerCase().indexOf('a:')==0 ) {
+				'q' in qa &&
+					!('a' in qa) &&
+						(qa.a=ch.trim().substr(2)) &&
+						lesson.push( createQA( qa.q, qa.a ) )
+			}
+	
+		})
+		
+		storeLesson(lessonName||fileName.split('.')[0], lesson);
+	
+	});
+	
+}
+
 function isQABeingForgotten(qa) {
 	
 	var ret = false,
@@ -343,6 +374,10 @@ $$('lesson_switcher').onchange = function() {
 		
 		case '__find__':
 		findWord(prompt('Search for...'));
+		break;
+		
+		case '__fileimport__':
+		importLesson(prompt('File name...'), prompt('Lesson name...'));
 		break;
 		
 		case '__showexcluced__':
