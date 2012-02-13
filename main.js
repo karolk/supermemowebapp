@@ -3,7 +3,7 @@ var recreateLessons = false,
 	currentLessonName = 'top100',
 	currentLesson,
 	currentQuestion,
-	correctAnswersBeforeMemorised = 10,
+	correctAnswersBeforeMemorised = 7,
 	liveData= {
 		knownWords: 0
 	}
@@ -249,6 +249,7 @@ function askQuestion(qa) {
     if ( currentQuestion ) {
     	lessonMode();
     	$('#question').text( currentQuestion.q );
+    	$('#answer').trigger('focus');
     }    
     else {
     	editMode();
