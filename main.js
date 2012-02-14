@@ -173,6 +173,16 @@ function deleteLesson(lessonName) {
 	saveLessons();
 }
 
+function deleteQA(qa) {
+	currentLesson.forEach(function(elem, i) {
+		if (elem === qa) {
+			currentLesson.splice(i, 1);
+			saveLessons();
+			return;
+		}
+	});
+}
+
 function storeQA(lesson, QA) {
 	lesson.push( QA )
 }
@@ -370,6 +380,11 @@ $$('lesson_switcher').onchange = function() {
 		break;
 		
 		case '__delete__':
+		break;
+		
+		case '__deleteqa__':
+			deleteQA(currentQuestion);
+			askQuestion();
 		break;
 		
 		case '__find__':
