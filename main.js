@@ -311,14 +311,14 @@ function initLesson() {
     askQuestion();
 }
 
-function drawQuestion() {
+function drawQuestion(qas) {
 
-	var ret = null;
+	var ret = null, qas = qas||currentLesson;
 	
-	if (currentLesson.length) {
-    	var randomQuestion = currentLesson[
+	if (qas.length) {
+    	var randomQuestion = qas[
     		Math.round(
-    			Math.random()*(currentLesson.length-1)
+    			Math.random()*(qas.length-1)
     			)
     		];
     	    	
@@ -338,13 +338,21 @@ function askQuestion(qa) {
     currentQuestion = qa || drawQuestion();
     
     if ( !currentQuestion ) {
-    	for (var i=0; i<100; i++) {
+    	for (var i=0; i<10; i++) {
     		var randomQuestion = drawQuestion();
     		if (randomQuestion) {
     			currentQuestion = randomQuestion;
     			break;
     		}
     	}
+    }
+    
+    if ( !currentQuestion ) {
+    	var activeQuestions = currentLesson
+    		.filter(function(qa) {
+    			return isQABeingForgotten( qa )
+    		})
+    	currentQuestion = drawQuestion(activeQuestions);
     }
     
     if ( currentQuestion ) {
