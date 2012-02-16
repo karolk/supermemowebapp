@@ -1,6 +1,6 @@
 var recreateLessons = false,
 	lessons = {},
-	currentLessonName = 'top100',
+	currentLessonName = 'top 100 Spanish',
 	currentLesson,
 	currentQuestion,
 	correctAnswersBeforeMemorised = 7,
@@ -21,8 +21,48 @@ function compatibilityFixes() {
 	saveLessons();
 	
 }
+
 //constructors
-function Lesson() {
+function Lesson(name, title) {
+	
+	if ( !(this instanceof Lesson) ) {return new Lesson(name, title)}
+	
+	this.name = name;
+	this.title = title||name;
+	this.QA = [];
+	
+	this.instances.push(this);
+	
+	this.save();
+	
+}
+
+Lesson.prototype.instances = [];
+
+Lesson.prototype.save = function() {
+	localStorage.setItem( 'lessons', JSON.stringify( Lesson.prototype.instances ) )
+}
+
+Lesson.prototype.remove = function() {
+	var all = Lesson.prototype.instances;
+	all.forEach(function(lesson, i) {
+		if (lesson===this) {
+			all.splice(i, 1);
+			break;
+		}
+	});
+	Lesson.prototype.save();
+}
+
+Lesson.prototype.addQA = function() {
+
+}
+
+Lesson.prototype.getRandomQA = function() {
+
+}
+
+Lesson.prototype.removeQA = function() {
 
 }
 
@@ -56,13 +96,29 @@ function createQA(q, a) {
 }
 
 function lessonMode() {
-	$('#adding').addClass('nodisplay')
-	$('#lesson').removeClass('nodisplay');
+	$('.root').attr('class', 'root lesson');
 }
 
 function editMode() {
-	$('#adding').removeClass('nodisplay')
-	$('#lesson').addClass('nodisplay');
+	$('.root').attr('class', 'root edit');
+}
+
+function listMode() {
+	$('.root').attr('class', 'root list');
+}
+
+function importFile() {
+	var hasDefault = 'top 100 Spanish' in lessons;
+	importLesson(
+		prompt(
+			'File name...',
+			hasDefault?'':'top100spanish.txt'
+		),
+		prompt(
+			'Lesson name...',
+			hasDefault?'':'top 100 Spanish'
+		)
+	);
 }
 
 function saveLessons() {
@@ -72,7 +128,7 @@ function saveLessons() {
 function importLesson(fileName, lessonName) {
 
 	$.get(fileName, function(response) {
-	
+		
 		var chunks = response.split('\n'),
 			lesson=[],
 			qa;
@@ -81,19 +137,19 @@ function importLesson(fileName, lessonName) {
 	
 			if ( ch.trim().toLowerCase().indexOf('q:')==0 ) {
 				qa={
-					q: ch.trim().substr(2)
+					q: ch.trim().substr(2).trim()
 				}
 			}
 		
 			if( ch.trim().toLowerCase().indexOf('a:')==0 ) {
 				'q' in qa &&
 					!('a' in qa) &&
-						(qa.a=ch.trim().substr(2)) &&
+						(qa.a=ch.trim().substr(2).trim()) &&
 						lesson.push( createQA( qa.q, qa.a ) )
 			}
 	
 		})
-		
+
 		storeLesson(lessonName||fileName.split('.')[0], lesson);
 	
 	});
@@ -159,13 +215,10 @@ function wordsAlreadyKnown() {
 }
 
 function storeLesson(lessonName, lesson) {
+	debugger;
 	lessons[lessonName] = lesson;
-	var opt = document.createElement('option');
-		lessonName == lessonName && opt.setAttribute('selected', 'selected');
-		opt.innerHTML = lessonName;
-		$$('lesson_switcher').insertBefore(opt, $$('lesson_switcher').firstChild)
-		
 	saveLessons();
+	createLessonLink(lessonName);
 }
 
 function deleteLesson(lessonName) {
@@ -233,11 +286,23 @@ function initStorage() {
 	//retrieve lessons
 	lessons = JSON.parse(localStorage.getItem('lessons'));
 	for (var lessonName in lessons) {
-		var opt = document.createElement('option');
-		lessonName == currentLessonName && opt.setAttribute('selected', 'selected');
-		opt.innerHTML = lessonName;
-		$$('lesson_switcher').insertBefore(opt, $$('lesson_switcher').firstChild)
+		createLessonLink(lessonName);
 	}
+}
+
+function createLessonLink(lessonName) {
+	return $(document.createElement('a'))
+			.text(lessonName)
+			.attr({
+				'href': '#'+lessonName,
+				'class': 'open_lesson'
+			})
+			.click(function() {
+				currentLessonName = lessonName;
+				initLesson();
+				return false;
+			})
+			.appendTo('.links_list');
 }
 
 function initLesson() {
@@ -256,12 +321,7 @@ function drawQuestion() {
     			Math.random()*(currentLesson.length-1)
     			)
     		];
-    	
-    	//make sure score is there
-    	//remove soon
-    	randomQuestion.score || (randomQuestion.score = []);
-    	saveLessons();
-    	
+    	    	
     	if ( isQABeingForgotten(randomQuestion) ) {
     		ret = randomQuestion;
     	}
@@ -358,6 +418,8 @@ $('#populate_lesson').submit(function() {
 	
 })
 
+$('.import').click(importFile);
+
 $$('lesson_switcher').onchange = function() {
 	
 	switch (this.value) {
@@ -373,6 +435,10 @@ $$('lesson_switcher').onchange = function() {
 			initLesson();
 			
 		}
+		break;
+		
+		case '__list__':
+		listMode();
 		break;
 		
 		case '__edit__':
@@ -392,29 +458,22 @@ $$('lesson_switcher').onchange = function() {
 		break;
 		
 		case '__fileimport__':
-		importLesson(prompt('File name...'), prompt('Lesson name...'));
+		importFile();
 		break;
 		
 		case '__showexcluced__':
 		showExcludedWords();
 		break;
 		
-		default:
-		currentLessonName = this.value;
-		initLesson();
-		break;
-		
 	}
-	
-	$('#lesson_switcher').val(currentLessonName);
-		
+			
 };
 
 function init() {
 	initStorage();
 	compatibilityFixes();
 	wordsAlreadyKnown();
-	initLesson();
+	$('.root').addClass('list')
 }
 
 onload = init

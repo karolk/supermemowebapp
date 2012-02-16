@@ -1,225 +1,69 @@
 ﻿<!doctype html>
+
 <head>
-<meta name="viewport" content="width=device-width, height=device-height, user-scalable=yes"/>
-
-<style>
-html, body {
-	margin: 0;
-	padding: 0;
-	border: 0;
-}
-
-p, form {
-    margin: 0 10%;
-    margin-bottom: 1em;
-    font-size: 200%;
-    font-family: sans-serif;
-    text-align: center;
-    overflow: hidden;
-}
-
-input {
-    font-size: 150%;
-    width: 98%;
-}
-
-.status {
-	color: #AAA;
-	font-size: 100%;
-}
-
-.input_pairs input {
-	width: 48%;
-}
-
-#actions {
-	font-size: 14px;
-	text-align: right;
-	background-color: #EEE;
-	border-bottom: 1px solid #AAA;
-	padding: 0 1em;
-}
-
-button.check,
-button.dunno {
-	font-size: 50%;
-	background-color: pink;
-	color: white;
-	float: left;
-	border: 1px solid #AAA;
-}
-
-button.check {
-	background-color: green;
-	float: right;
-}
-
-.si {
-    color: green;
-}
-
-.no {
-    color: red
-}
-
-#log_si, #log_no {
-	clear: both;
-    width: 40%;
-    padding: 0; margin: 0;
-    margin-left: 9%;
-    display: inline-block;
-    vertical-align: top;
-}
-
-.nodisplay {
-	display: none;
-}
-
-</style>
+	
+	<title>Super memo</title>
+	
+	<meta name="viewport" content="width=device-width, height=device-height, user-scalable=yes"/>
+	
+	<link href="main.css" rel="stylesheet" type="text/css">
+	
 </head>
 
 <body>
 
-<p id="actions">Sets:
-<select id="lesson_switcher">
-<optgroup label="-------">
-<option value="__new__">New set...</option>
-<option value="__edit__">Add words...</option>
-<option value="__deleteqa__">Delete word...</option>
-<option value="__fileimport__">Import set...</option>
-<option value="__delete__">Delete current set...</option>
-<option value="__find__">Find word...</option>
-<option value="__showexcluced__">Show words I learnt...</option>
-</optgroup>
-</select></p>
+<p id="actions">
+	Sets:
+	<select id="lesson_switcher">
+		<option>Menu</option>
+		<option value="__list__">See all...</option>
+		<option value="__new__">New set...</option>
+		<option value="__edit__">Add words...</option>
+		<option value="__deleteqa__">Delete word...</option>
+		<option value="__fileimport__">Import set...</option>
+		<option value="__delete__">Delete current set...</option>
+		<option value="__find__">Find word...</option>
+		<option value="__showexcluced__">Show words I learnt...</option>
+	</select>
+</p>
 
-<div id="lesson" class="screen">
-<p id="question"></p>
+<div class="root">
 
-<form id="f_answer">
-<input id="answer" autocomplete="off">
-<button class="dunno">Dunno</button>
-<button class="check">Check</button>
-</form>
+	<div class="screen" id="list">
+		<p class="links_list"></p>
+		<p>
+			<button class="import">Import lesson</button>
+		</p>
+	</div>
 
-<ul id="log_si"></ul>
-<ul id="log_no"></ul>
+	<div id="lesson" class="screen">
+		<p id="question"></p>
+		
+		<form id="f_answer">
+			<input id="answer" autocomplete="off">
+			<button class="dunno">Dunno</button>
+			<button class="check">Check</button>
+		</form>
+		
+		<ul id="log_si"></ul>
+		<ul id="log_no"></ul>
+		
+		<p class="status">
+			Known words:
+			<span id="known_words"></span>
+		</p>
+	</div>
 
-<p class="status">Known words: <span id="known_words"></span></p>
+<div id="edit" class="screen">
+	<form id="populate_lesson" class="input_pairs">
+		<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
+		<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
+		<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
+		<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
+		<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
+		<button>Save</button>
+	</form>
 </div>
-
-<div id="adding" class="screen nodisplay">
-<form id="populate_lesson" class="input_pairs">
-<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
-<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
-<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
-<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
-<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
-<button>Save</button>
-</form>
-
-<textarea id="dict" style="display: none">
-de;of, from
-el/a;the
-lo;the for it
-que;that
-y;and
-él;he, him
-en;in, into, inside, on
-a;a, to
-un/una;a, an
-ser;to be
-no;no
-su;his
-haber;to have, has
-del;of, from
-con;with
-por;by, for, per
-yo;I
-uno/una;one
-al;to, to the
-para;for, towards, stop
-como;as, since, like
-más;more
-estar;to be, stay
-todo/a;everything
-tener;to have
-poder;to be able to, can, might, may
-pero;but
-este/a;this
-este;this
-o;or
-hacer;to do, make
-decir;to say, tell
-otro/tra;another, other
-si;if, yes
-sin;without
-mi/mis;my, not me
-ese/a;that
-ir;to go
-dar;to give
-cuando;when
-ya;already
-ver;to see
-sobre;envelope, on
-saber;to know
-año;year
-entre;between, among
-muy;very, highly
-mismo;same
-qué;what
-mucho;much
-dos;two
-porque;because, why
-sólo;only
-también;also, too
-vez/veces;time
-día;day
-aquel;that
-parecer;to seem
-querer;to want
-ni;nor, neither
-pasar;to happen, pass
-hasta;until, even
-llegar;to arrive, come
-tan;so
-deber;to owe
-hombre;man
-tiempo;time
-desde;from, since
-nuestro/tra;ours
-poner;to put
-primero/a;first
-dejar;to leave
-vida;life
-ahora;now
-tanto/a;so much
-poco/a;little, few
-siempre;always
-eso;that
-llevar;to take, carry
-nuevo/a;new
-quedar;to stay
-cosa;thing
-nada;nothing
-parte;part
-mujer/jeres;woman, women
-aunque;though, although
-cada;each
-bien;well, good
-seguir;to follow
-así;like this
-buen;good, well
-algo;something
-hablar;to speak, talk
-donde;where
-volver;to return
-encontrar;to find
-pensar;to think
-casa;house
-mundo;world
-último/a;last
-</textarea>
 
 <script src="zepto.min.js"></script>
 <script src="conf.js"></script>

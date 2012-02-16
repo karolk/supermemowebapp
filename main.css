@@ -1,0 +1,100 @@
+html, body {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+p, form {
+    margin: 0 10%;
+    margin-bottom: 1em;
+    font-size: 200%;
+    font-family: sans-serif;
+    text-align: center;
+    overflow: hidden;
+}
+
+input {
+    font-size: 150%;
+    width: 98%;
+}
+
+.status {
+	color: #AAA;
+	font-size: 100%;
+}
+
+.input_pairs input {
+	width: 48%;
+}
+
+#actions {
+	font-size: 14px;
+	text-align: right;
+	background-color: #EEE;
+	border-bottom: 1px solid #AAA;
+	padding: 0 1em;
+}
+
+button.check,
+button.dunno {
+	font-size: 50%;
+	background-color: pink;
+	color: white;
+	float: left;
+	border: 1px solid #AAA;
+}
+
+button.check {
+	background-color: green;
+	float: right;
+}
+
+.si {
+    color: green;
+}
+
+.no {
+    color: red
+}
+
+.open_lesson {
+	display: block;
+	border-bottom: 1px solid #DDD;
+	padding: 1ex 1em;
+	line-height: 1em;
+	-webkit-box-shadow: 0 -30px 30px #EEE inset;
+	text-decoration: none;
+	color: #555;
+	text-shadow: -1px -1px 0 #F8F8F8;
+	position: relative;
+}
+
+.open_lesson:before {
+	display: 'block';
+	content: ' ';
+	width: 0; height: 0;
+	border: 1ex solid #DDD;
+	position: absolute;
+	top: 1ex; right: 1em;
+	border-color: transparent transparent transparent #DDD;
+	border-right-width: 0;
+}
+
+#log_si, #log_no {
+	clear: both;
+    width: 40%;
+    padding: 0; margin: 0;
+    margin-left: 9%;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.screen {
+	display: none;
+}
+
+.root.list #list,
+.root.edit #edit,
+.root.lesson #lesson {
+	display: block;
+}
