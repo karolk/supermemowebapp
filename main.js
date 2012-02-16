@@ -352,7 +352,9 @@ function askQuestion(qa) {
     		.filter(function(qa) {
     			return isQABeingForgotten( qa )
     		})
-    	currentQuestion = drawQuestion(activeQuestions);
+    	if (activeQuestions.length) {
+    		currentQuestion = drawQuestion(activeQuestions);
+    	}
     }
     
     if ( currentQuestion ) {
