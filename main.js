@@ -6,7 +6,8 @@ var recreateLessons = false,
 	correctAnswersBeforeMemorised = 7,
 	liveData= {
 		knownWords: 0
-	}
+	},
+	dontMindAccents = true;
 
 function compatibilityFixes() {
 	//make sure score array is everywhere
@@ -368,12 +369,77 @@ function askQuestion(qa) {
     
 }
 
+function convertAccents(word) {
+	
+	var ret = '';
+	
+	var replacements = {
+		//a = 97
+		224: 97,
+		225: 97,
+		226: 97,
+		227: 97,
+		228: 97,
+		229: 97,
+		230: 97,
+		//e = 101
+		232: 101,
+		233: 101,
+		234: 101,
+		235: 101,
+		//i = 105
+		236: 105,
+		237: 105,
+		238: 105,
+		239: 105,
+		//o = 111
+		242: 111,
+		243: 111,
+		244: 111,
+		245: 111,
+		246: 111,
+		//u = 117
+		249: 117,
+		250: 117,
+		251: 117,
+		252: 117
+	}
+	
+	for (var i=0, l=word.length; i<l; i++) {
+		word.charCodeAt(i) in replacements ?
+			ret += String.fromCharCode(replacements[word.charCodeAt(i)]) :
+			ret += word.charAt(i)
+	}
+	
+	return ret;
+	
+}
+
+function checkAnswer(qaAnswer, answer) {
+	var ret = false;
+	if (qaAnswer && answer) {
+		if (dontMindAccents) {
+			qaAnswer = convertAccents(qaAnswer);
+			answer = convertAccents(answer);
+		}
+		ret = qaAnswer
+				.trim()
+				.toLowerCase()
+				.indexOf(
+					answer
+						.trim()
+						.toLowerCase()
+				)>=0;
+	}
+	return ret;
+}
+
 $$('f_answer').onsubmit = function() {
 	
 	var answer = $$('answer').value,
 		nextQuestion;
 	
-    if (answer && currentQuestion.a.indexOf(answer)>=0 ) {
+    if ( checkAnswer(currentQuestion.a, answer) ) {
 
         var li = document.createElement('li')
         li.className = 'si'
