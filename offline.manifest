@@ -1,0 +1,8 @@
+CACHE MANIFEST
+# this is a comment
+CACHE:
+main.css
+zepto.min.js
+conf.js
+main.js
+index.html
