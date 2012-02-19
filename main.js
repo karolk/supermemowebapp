@@ -1,5 +1,4 @@
-var recreateLessons = false,
-	lessons = {},
+var lessons,
 	currentLessonName = 'top 100 Spanish',
 	currentLesson,
 	currentQuestion,
@@ -9,7 +8,9 @@ var recreateLessons = false,
 	},
 	dontMindAccents = true;
 
+//APP.fixtures
 function compatibilityFixes() {
+	
 	//make sure score array is everywhere
 	for (lessonName in lessons) {
 		lessons[lessonName].forEach(function(qa) {
@@ -79,10 +80,12 @@ function isUndef(o) {
 	return typeof o == 'undefined'
 }
 
+//new Lesson
 function createLesson() {
 	return []
 }
 
+//new QA
 function createQA(q, a) {
 	if (q && a) {
 		return {
@@ -96,18 +99,19 @@ function createQA(q, a) {
 	}
 }
 
+//UI.mode
 function lessonMode() {
 	$('.root').attr('class', 'root lesson');
 }
-
+//UI
 function editMode() {
 	$('.root').attr('class', 'root edit');
 }
-
+//UI
 function listMode() {
 	$('.root').attr('class', 'root list');
 }
-
+//APP.import
 function importFile() {
 	var hasDefault = 'top 100 Spanish' in lessons;
 	importLesson(
@@ -121,11 +125,11 @@ function importFile() {
 		)
 	);
 }
-
+//Leson.save
 function saveLessons() {
 	localStorage.setItem( 'lessons', JSON.stringify(lessons) )
 }
-
+//Lesson.import or APP.import
 function importLesson(fileName, lessonName) {
 
 	$.get(fileName, function(response) {
@@ -156,7 +160,7 @@ function importLesson(fileName, lessonName) {
 	});
 	
 }
-
+//QA.isBeingForgotten
 function isQABeingForgotten(qa) {
 	
 	var ret = false,
@@ -186,13 +190,13 @@ function isQABeingForgotten(qa) {
 	return ret;
 	
 }
-
+//UI.update..
 function updateLearntScore(count) {
 	isUndef(count) && (count = 1);
 	liveData.knownWords += count;
 	$('#known_words').text(liveData.knownWords);
 }
-
+//UI.show
 function showExcludedWords() {
 	alert(
 	currentLesson
@@ -203,7 +207,7 @@ function showExcludedWords() {
 		.join(', ')
 	)
 }
-
+//QAList.getMemorised()
 function wordsAlreadyKnown() {
 	var count = 0;
 	for (lessonName in lessons) {
@@ -214,19 +218,18 @@ function wordsAlreadyKnown() {
 	updateLearntScore(count);
 	
 }
-
+//Lesson.save
 function storeLesson(lessonName, lesson) {
-	debugger;
 	lessons[lessonName] = lesson;
 	saveLessons();
 	createLessonLink(lessonName);
 }
-
+//Lesson.remove
 function deleteLesson(lessonName) {
 	delete lessons[lessonName];
 	saveLessons();
 }
-
+//QA.delete
 function deleteQA(qa) {
 	currentLesson.forEach(function(elem, i) {
 		if (elem === qa) {
@@ -236,11 +239,11 @@ function deleteQA(qa) {
 		}
 	});
 }
-
+//QA.save
 function storeQA(lesson, QA) {
 	lesson.push( QA )
 }
-
+//Lesson.addQA
 function storeQAinCurrentLesson(q, a) {
 	var qa = createQA(q, a)
 	if (qa) {
@@ -249,7 +252,7 @@ function storeQAinCurrentLesson(q, a) {
 	}
 	return qa
 }
-
+//Lesson.findQA
 function findWord(word) {
 	if (!word) {return}
 	var mes;
@@ -261,7 +264,7 @@ function findWord(word) {
 	});
 	!mes && alert('Not found');
 }
-
+//App.init
 function initStorage() {
 
 	//if incapableof storage, return
@@ -275,16 +278,17 @@ function initStorage() {
 	if (lessons) {
 		for (var lessonName in lessons) {
 			createLessonLink(lessonName);
+			createMemorizationStatus(lessonName);
 		}
 	}
 	
 	else {
-		lessons = []
+		lessons = {};
 		saveLessons();
 	}
 	
 }
-
+//UI.lessonlink
 function createLessonLink(lessonName) {
 	return $(document.createElement('a'))
 			.text(lessonName)
@@ -299,13 +303,61 @@ function createLessonLink(lessonName) {
 			})
 			.appendTo('.links_list');
 }
+//UI.memoStatus
+function createMemorizationStatus(lessonName) {
+	var beingMemorised=0,
+		beingForgotten=0;		
+	
+	lessons[lessonName].forEach(function(qa) {
+		if (qa.score.length<correctAnswersBeforeMemorised) {
+			beingMemorised+=1;
+			return
+		}
+		else {
+			if (isQABeingForgotten(qa)) {
+				beingForgotten+=1;
+				return
+			}
+		}
+	});
+	
+	var status_wrap = $(document.createElement('span'))
+		.addClass('memo-status')
+		.appendTo('.links_list');
+			
+	var notMemorized = $(document.createElement('span'))
+		.addClass('status-being-memorized')
+		.appendTo(status_wrap)
+		.css('width', 
+			Math.min(
+				Math.round(
+					beingMemorised/lessons[lessonName].length*100
+				),
+				100
+			)+'%'
+			);
+			
+	var needRevision = $(document.createElement('span'))
+		.addClass('status-need-revision')
+		.appendTo(status_wrap)
+		.css('width', 
+			Math.min(
+				Math.round(
+					beingForgotten/lessons[lessonName].length*100
+				),
+				100
+			)+'%'
+			);
 
+	
+}
+//init + whatever
 function initLesson() {
 	$$('log_si').innerHTML = $$('log_no').innerHTML = ''
     currentLesson = lessons[currentLessonName];
     askQuestion();
 }
-
+//Lesson.getRandomQA
 function drawQuestion(qas) {
 
 	var ret = null, qas = qas||currentLesson;
@@ -325,7 +377,7 @@ function drawQuestion(qas) {
     
 	return ret;
 }
-
+//Lesson.getRandomQA
 function askQuestion(qa) {
 	
     $('#answer').val('');
@@ -362,7 +414,7 @@ function askQuestion(qa) {
     }
     
 }
-
+//util.convertAccents
 function convertAccents(word) {
 	
 	var ret = '';
@@ -408,7 +460,7 @@ function convertAccents(word) {
 	return ret;
 	
 }
-
+//QA.check
 function checkAnswer(qaAnswer, answer) {
 	var ret = false;
 	if (qaAnswer && answer) {
@@ -427,7 +479,7 @@ function checkAnswer(qaAnswer, answer) {
 	}
 	return ret;
 }
-
+//UI.handle
 $$('f_answer').onsubmit = function() {
 	
 	var answer = $$('answer').value,
@@ -464,7 +516,7 @@ $$('f_answer').onsubmit = function() {
     
     return false;
 }
-
+//UI.handle
 $('#populate_lesson').submit(function() {
 	
 	var input = $(this).serializeArray();
@@ -487,9 +539,9 @@ $('#populate_lesson').submit(function() {
 	return false;
 	
 })
-
+UI.handle
 $('.import').click(importFile);
-
+//UI.handle
 $$('lesson_switcher').onchange = function() {
 	
 	switch (this.value) {
@@ -538,12 +590,12 @@ $$('lesson_switcher').onchange = function() {
 	}
 			
 };
-
+//App.start
 function init() {
 	initStorage();
 	compatibilityFixes();
 	wordsAlreadyKnown();
 	$('.root').addClass('list')
 }
-
+//dunno
 onload = init

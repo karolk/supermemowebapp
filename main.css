@@ -57,6 +57,29 @@ button.check {
     color: red
 }
 
+.memo-status {
+	width: 100%;
+	display: block;
+	height: 2px;
+	background-color: green;
+}
+
+.status-need-revision {
+	width: 100%;
+	display: block;
+	height: 2px;
+	background-color: yellow;
+	float: right;
+}
+
+.status-being-memorized {
+	width: 100%;
+	display: block;
+	height: 2px;
+	background-color: orange;
+	float: right;
+}
+
 .open_lesson {
 	display: block;
 	border-bottom: 1px solid #DDD;
@@ -65,7 +88,7 @@ button.check {
 	-webkit-box-shadow: 0 -30px 30px #EEE inset;
 	text-decoration: none;
 	color: #555;
-	text-shadow: -1px -1px 0 #F8F8F8;
+	text-shadow: -1px -1px 0 white;
 	position: relative;
 }
 
