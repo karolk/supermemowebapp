@@ -49,7 +49,7 @@ Lesson.prototype.remove = function() {
 	all.forEach(function(lesson, i) {
 		if (lesson===this) {
 			all.splice(i, 1);
-			break;
+			return; //means break
 		}
 	});
 	Lesson.prototype.save();
@@ -262,33 +262,27 @@ function findWord(word) {
 	!mes && alert('Not found');
 }
 
-function getDefaultLesson() {
-	var words = $$('dict').value.split('\n');
-		words.pop(); //last one is to be discarded
-	var lesson = createLesson();
-	for (var i=0, l=words.length; i<l; i++) {
-		var pair = words[i].split(';');
-		lesson.push( createQA(pair[1], pair[0]) );
-	}
-	return lesson;
-}
-
 function initStorage() {
+
 	//if incapableof storage, return
 	if ( isUndef(localStorage) || isUndef(localStorage.getItem) ) {
 		return
 	}
-	//if doesn't have lessons, create
-	if ( !localStorage.getItem('lessons') || recreateLessons )  {
-		lessons[currentLessonName] = getDefaultLesson();
-		saveLessons();
-	}
 	
 	//retrieve lessons
 	lessons = JSON.parse(localStorage.getItem('lessons'));
-	for (var lessonName in lessons) {
-		createLessonLink(lessonName);
+	
+	if (lessons) {
+		for (var lessonName in lessons) {
+			createLessonLink(lessonName);
+		}
 	}
+	
+	else {
+		lessons = []
+		saveLessons();
+	}
+	
 }
 
 function createLessonLink(lessonName) {
