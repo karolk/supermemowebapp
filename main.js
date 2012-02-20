@@ -539,7 +539,7 @@ $('#populate_lesson').submit(function() {
 	return false;
 	
 })
-UI.handle
+//UI.handle
 $('.import').click(importFile);
 //UI.handle
 $$('lesson_switcher').onchange = function() {
