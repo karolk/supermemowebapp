@@ -15,15 +15,14 @@
 <body>
 
 <p id="actions">
-	Sets:
 	<select id="lesson_switcher">
-		<option>Menu</option>
+		<option selected="selected">Menu</option>
 		<option value="__list__">See all...</option>
 		<option value="__new__">New set...</option>
-		<option value="__edit__">Add words...</option>
-		<option value="__deleteqa__">Delete word...</option>
+		<option value="__edit__">Add question/answer...</option>
+		<option value="__updateqa__">Update question/answer...</option>
+		<option value="__deleteqa__">Delete question/answer...</option>
 		<option value="__fileimport__">Import set...</option>
-		<option value="__delete__">Delete current set...</option>
 		<option value="__find__">Find word...</option>
 		<option value="__showexcluced__">Show words I learnt...</option>
 	</select>
@@ -58,11 +57,23 @@
 
 <div id="edit" class="screen">
 	<form id="populate_lesson" class="input_pairs">
-		<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
-		<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
-		<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
-		<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
-		<input name="q" autocomplete="off"><input name="v" autocomplete="off"><br>
+		<input name="q" autocomplete="off"><input name="a" autocomplete="off"><br>
+		<input name="q" autocomplete="off"><input name="a" autocomplete="off"><br>
+		<input name="q" autocomplete="off"><input name="a" autocomplete="off"><br>
+		<input name="q" autocomplete="off"><input name="a" autocomplete="off"><br>
+		<input name="q" autocomplete="off"><input name="a" autocomplete="off"><br>
+		<button>Save</button>
+	</form>
+</div>
+
+<div id="dialog" class="screen">
+
+</div>
+
+<div class="ui-templates">
+	<form class="update_qa input_pairs">
+		<input name="q" autocomplete="off">
+		<input name="a" autocomplete="off">
 		<button>Save</button>
 	</form>
 </div>

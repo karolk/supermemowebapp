@@ -460,6 +460,51 @@ function convertAccents(word) {
 	return ret;
 	
 }
+
+function qaUpdate() {
+	showEditWord(function() {
+		var $form = $('#dialog .update_qa'),
+			$q = $form.find('[name=q]'),
+			$a = $form.find('[name=a]');
+		
+			$q.val(currentQuestion.q);
+			$a.val(currentQuestion.a);
+			
+			$form.submit(function() {
+				currentQuestion.q = $q.val();
+				currentQuestion.a = $a.val();
+				saveLessons();
+				lessonMode();
+				askQuestion(currentQuestion);
+				return false;
+			});
+	});
+}
+
+function showEditWord(callback) {
+	dialog(function() {
+		$('.update_qa')
+			.appendTo('#dialog')
+	});
+	callback && callback();
+}
+
+function dialog(callback) {
+	$('.root').attr('class', 'root dialog');
+	callback && callback();
+}
+
+function handleQAInput(input) {
+	var qa = [];
+	
+	input.forEach(function(elem) {
+		qa.push(elem.value)
+		if (qa.length == 2) {
+			storeQAinCurrentLesson(qa.shift(), qa.shift());
+		}
+	});
+}
+
 //QA.check
 function checkAnswer(qaAnswer, answer) {
 	var ret = false;
@@ -521,14 +566,7 @@ $('#populate_lesson').submit(function() {
 	
 	var input = $(this).serializeArray();
 	
-	var qa = [];
-	
-	input.forEach(function(elem) {
-		qa.push(elem.value)
-		if (qa.length == 2) {
-			storeQAinCurrentLesson(qa.shift(), qa.shift());
-		}
-	});
+	handleQAInput(input);
 	
 	$(this).find('input').each(function() {
 		$(this).val('');
@@ -565,6 +603,10 @@ $$('lesson_switcher').onchange = function() {
 		
 		case '__edit__':
 		editMode();
+		break;
+		
+		case '__updateqa__':
+		qaUpdate();
 		break;
 		
 		case '__delete__':

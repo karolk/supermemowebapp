@@ -112,12 +112,17 @@ button.check {
     vertical-align: top;
 }
 
+.ui-templates {
+	display: none;
+}
+
 .screen {
 	display: none;
 }
 
 .root.list #list,
 .root.edit #edit,
-.root.lesson #lesson {
+.root.lesson #lesson,
+.root.dialog #dialog {
 	display: block;
 }
