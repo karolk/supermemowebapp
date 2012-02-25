@@ -7,6 +7,15 @@ var lessons,
         knownWords: 0
     },
     dontMindAccents = true,
+    roundTimes = [
+        conf.millsec.min,
+        5 * conf.millsec.min,
+        15 * conf.millsec.min,
+        conf.millsec.min/10 //6 sec for testing
+    ],
+    roundDefaultTime = 1,
+    lessonEnd,
+    roundQA = [],
     lastAsked = [];
 
 //APP.fixtures
@@ -354,11 +363,29 @@ function createMemorizationStatus(lessonName) {
 
     
 }
+function hasTimeForQA() {
+    return (+new Date)<lessonEnd;
+}
+
+function nextQuestionOrEndLesson(qa) {
+    if (hasTimeForQA()) {
+        askQuestion(qa)
+    }
+    else {
+        dialog(function() {
+            $('#dialog').empty();
+            var endMes = $('<p>Time is up!</p>');
+            $('#dialog').append(endMes);
+        });
+    }
+}
+
 //init + whatever
 function initLesson() {
     $$('log_si').innerHTML = $$('log_no').innerHTML = ''
     currentLesson = lessons[currentLessonName];
-    askQuestion();
+    lessonEnd = (+new Date) + roundTimes[roundDefaultTime];
+    nextQuestionOrEndLesson();
 }
 //Lesson.getRandomQA
 function drawQuestion(qas) {
@@ -513,7 +540,7 @@ function qaUpdate() {
                 currentQuestion.a = $a.val();
                 saveLessons();
                 lessonMode();
-                askQuestion(currentQuestion);
+                setTimeout(nextQuestionOrEndLesson, 1);
                 return false;
             });
     });
@@ -521,6 +548,7 @@ function qaUpdate() {
 
 function showEditWord(callback) {
     dialog(function() {
+        $('#dialog').empty();
         $('.update_qa')
             .appendTo('#dialog')
     });
@@ -595,7 +623,7 @@ $$('f_answer').onsubmit = function() {
         
     }
     
-    askQuestion(nextQuestion);
+    nextQuestionOrEndLesson(nextQuestion);
     
     return false;
 }
@@ -652,7 +680,7 @@ $('#app_menu a').click(function() {
         
         case '__deleteqa__':
             deleteQA(currentQuestion);
-            askQuestion();
+            nextQuestionOrEndLesson();
         break;
         
         case '__find__':
