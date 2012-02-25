@@ -89,37 +89,37 @@ button.check {
 	width: 100%;
 	display: block;
 	height: 2px;
-	background-color: orange;
+	background-color: rgb(225,225,225);
 	float: right;
 }
 
 .open_lesson {
 	display: block;
-	border-bottom: 1px solid #DDD;
-	padding: 1ex 1em;
+	padding: 1ex .6em;
 	line-height: 1em;
 	text-decoration: none;
-	color: #555;
-	text-shadow: -1px -1px 0 white;
+	color: rgba(0,0,0,.7);
 	position: relative;
-    background-image: -webkit-linear-gradient(bottom, rgb(238,238,238) 3%, rgb(255,255,255) 52%);
+    background-image: -webkit-linear-gradient(bottom, rgb(225,225,225) 0%, rgb(245,245,245) 50%);
     background-image: -webkit-gradient(
         linear,
         left bottom,
         left top,
-        color-stop(0.03, rgb(238,238,238)),
-        color-stop(0.52, rgb(255,255,255))
+        color-stop(0, rgb(225,225,225)),
+        color-stop(0.50, rgb(245,245,245))
     );
+    white-space:nowrap;
+    text-overflow: ellipsis;
 }
 
 .open_lesson:before {
 	display: 'block';
 	content: ' ';
 	width: 0; height: 0;
-	border: 1ex solid #DDD;
+	border: .4ex solid #DDD;
 	position: absolute;
-	top: 1ex; right: 1em;
-	border-color: transparent transparent transparent #DDD;
+	top: 1.6ex; right: .4em;
+	border-color: transparent transparent transparent #333;
 	border-right-width: 0;
 }
 
