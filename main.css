@@ -2,13 +2,13 @@ html, body {
 	margin: 0;
 	padding: 0;
 	border: 0;
+	font-family: sans-serif;
+	height: 100%;
 }
 
 p, form {
-    margin: 0 10%;
-    margin-bottom: 1em;
+    margin: 1ex 10%;
     font-size: 200%;
-    font-family: sans-serif;
     text-align: center;
     overflow: hidden;
 }
@@ -18,6 +18,27 @@ input {
     width: 98%;
 }
 
+#app_menu {
+    background-color: #EEE;
+    overflow: hidden;
+}
+
+#app_menu a {
+    width: 46%;
+    float: left;
+    border-top: 1px solid #DDD;
+    padding:1ex 2%;
+    color: #777;
+    text-decoration: none;
+    text-align: center;
+    height: 4ex;
+    text-shadow: -1px 1px 0 white;
+}
+
+#app_menu a:nth-child(even) {
+    border-left: 1px solid #DDD;
+}
+
 .status {
 	color: #AAA;
 	font-size: 100%;
@@ -25,14 +46,6 @@ input {
 
 .input_pairs input {
 	width: 48%;
-}
-
-#actions {
-	font-size: 14px;
-	text-align: right;
-	background-color: #EEE;
-	border-bottom: 1px solid #AAA;
-	padding: 0 1em;
 }
 
 button.check,
@@ -85,11 +98,18 @@ button.check {
 	border-bottom: 1px solid #DDD;
 	padding: 1ex 1em;
 	line-height: 1em;
-	-webkit-box-shadow: 0 -30px 30px #EEE inset;
 	text-decoration: none;
 	color: #555;
 	text-shadow: -1px -1px 0 white;
 	position: relative;
+    background-image: -webkit-linear-gradient(bottom, rgb(238,238,238) 3%, rgb(255,255,255) 52%);
+    background-image: -webkit-gradient(
+        linear,
+        left bottom,
+        left top,
+        color-stop(0.03, rgb(238,238,238)),
+        color-stop(0.52, rgb(255,255,255))
+    );
 }
 
 .open_lesson:before {
@@ -118,6 +138,11 @@ button.check {
 
 .screen {
 	display: none;
+	min-height: 100%;
+}
+
+.root {
+    height: 80%;
 }
 
 .root.list #list,

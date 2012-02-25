@@ -14,27 +14,10 @@
 
 <body>
 
-<p id="actions">
-	<select id="lesson_switcher">
-		<option selected="selected">Menu</option>
-		<option value="__list__">See all...</option>
-		<option value="__new__">New set...</option>
-		<option value="__edit__">Add question/answer...</option>
-		<option value="__updateqa__">Update question/answer...</option>
-		<option value="__deleteqa__">Delete question/answer...</option>
-		<option value="__fileimport__">Import set...</option>
-		<option value="__find__">Find word...</option>
-		<option value="__showexcluced__">Show words I learnt...</option>
-	</select>
-</p>
-
 <div class="root">
 
 	<div class="screen" id="list">
 		<p class="links_list"></p>
-		<p>
-			<button class="import">Import lesson</button>
-		</p>
 	</div>
 
 	<div id="lesson" class="screen">
@@ -70,6 +53,17 @@
 
 </div>
 
+<div id="app_menu">
+    <a href="#__list__">See all...</a>
+    <a href="#__new__">New set...</a>
+    <a href="#__edit__">Add question/answer...</a>
+    <a href="#__updateqa__">Update question/answer...</a>
+    <a href="#__deleteqa__">Delete question/answer...</a>
+    <a href="#__fileimport__">Import set...</a>
+    <a href="#__find__">Find word...</a>
+    <a href="#__showexcluced__">Show words I learnt...</a>
+</div>
+	
 <div class="ui-templates">
 	<form class="update_qa input_pairs">
 		<input name="q" autocomplete="off">
