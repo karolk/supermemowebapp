@@ -598,6 +598,9 @@ function checkAnswer(qaAnswer, answer) {
             qaAnswer = convertAccents(qaAnswer);
             answer = convertAccents(answer);
         }
+        //small hack because current words base has many
+        //with variants separated with / (otro/tra)
+        qaAnswer.indexOf('/') && (qaAnswer = qaAnswer.split('/')[0]);
         ret = qaAnswer
                 .trim()
                 .toLowerCase()
@@ -605,7 +608,7 @@ function checkAnswer(qaAnswer, answer) {
                     answer
                         .trim()
                         .toLowerCase()
-                )>=0;
+                )>=0 && answer.length/qaAnswer.length>=.8;
     }
     return ret;
 }
