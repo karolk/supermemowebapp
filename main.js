@@ -11,7 +11,7 @@ var lessons,
         conf.millsec.min,
         5 * conf.millsec.min,
         15 * conf.millsec.min,
-        conf.millsec.min/10 //6 sec for testing
+        conf.millsec.min/6 //6 sec for testing
     ],
     roundDefaultTime = 1,
     lessonEnd,
@@ -374,7 +374,24 @@ function nextQuestionOrEndLesson(qa) {
     else {
         dialog(function() {
             $('#dialog').empty();
-            var endMes = $('<p>Time is up!</p>');
+            var totalAnswered = roundQA.length,
+                goodAnswers = 0;
+            roundQA.forEach(function(answer){
+                goodAnswers+=answer;
+            });
+            
+            var badAnswers = totalAnswered - badAnswers,
+                correctPercent = Math.round(goodAnswers/totalAnswered*100);
+            
+            isNaN(correctPercent) && (correctPercent = 0);
+            
+                endMes = $(
+                    '<p>Time is up! Your result is '+
+                    '<span class="si">'+goodAnswers+
+                    '</span> correct answers out of '+
+                    totalAnswered+' questions ('+
+                    '<span class="si">'+correctPercent+
+                    '%</span>).</p>');
             $('#dialog').append(endMes);
         });
     }
@@ -384,7 +401,9 @@ function nextQuestionOrEndLesson(qa) {
 function initLesson() {
     $$('log_si').innerHTML = $$('log_no').innerHTML = ''
     currentLesson = lessons[currentLessonName];
-    lessonEnd = (+new Date) + roundTimes[roundDefaultTime];
+    lessonStart = +new Date;
+    lessonEnd = lessonStart + roundTimes[roundDefaultTime];
+    roundQA.length = 0;
     nextQuestionOrEndLesson();
 }
 //Lesson.getRandomQA
@@ -604,6 +623,7 @@ $$('f_answer').onsubmit = function() {
         $$('log_si').insertBefore(li, $$('log_si').firstChild)
                 
         currentQuestion.score.push([+new Date, 1]);
+        roundQA.push(1);
         saveLessons();
         
         isQABeingForgotten(currentQuestion) || updateLearntScore();
@@ -616,6 +636,7 @@ $$('f_answer').onsubmit = function() {
         $$('log_no').insertBefore(li, $$('log_no').firstChild)
         
         currentQuestion.score.push([+new Date, 0]);
+        roundQA.push(0);
         saveLessons();
         
         //remember to ask te same question again
