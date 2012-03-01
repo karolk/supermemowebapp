@@ -318,24 +318,43 @@ function createLessonLink(lessonName) {
 //UI.memoStatus
 function createMemorizationStatus(lessonName) {
     var beingMemorised=0,
-        beingForgotten=0;        
+        beingForgotten=0,
+        neverSeen=0;
     
     lessons[lessonName].forEach(function(qa) {
-        if (qa.score.length<correctAnswersBeforeMemorised) {
-            beingMemorised+=1;
-            return
+        if (qa.score.length) {
+            if (qa.score.length<correctAnswersBeforeMemorised) {
+                beingMemorised+=1;
+                return;
+            }
+            else {
+                if (isQABeingForgotten(qa)) {
+                    beingForgotten+=1;
+                    return;
+                }
+            }
         }
         else {
-            if (isQABeingForgotten(qa)) {
-                beingForgotten+=1;
-                return
-            }
+            neverSeen+=1;
+            return;
         }
     });
     
     var status_wrap = $(document.createElement('span'))
         .addClass('memo-status')
         .appendTo('.links_list');
+    
+    var unseen = $(document.createElement('span'))
+        .addClass('status-unseen')
+        .appendTo(status_wrap)
+        .css('width', 
+            Math.min(
+                Math.round(
+                    neverSeen/lessons[lessonName].length*100
+                ),
+                100
+            )+'%'
+            );
             
     var notMemorized = $(document.createElement('span'))
         .addClass('status-being-memorized')
