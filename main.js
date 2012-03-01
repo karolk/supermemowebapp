@@ -594,21 +594,23 @@ function handleQAInput(input) {
 function checkAnswer(qaAnswer, answer) {
     var ret = false;
     if (qaAnswer && answer) {
+    
+        qaAnswer = qaAnswer.trim().toLowerCase();
+        answer = answer.trim().toLowerCase();
+        
         if (dontMindAccents) {
             qaAnswer = convertAccents(qaAnswer);
             answer = convertAccents(answer);
         }
-        //small hack because current words base has many
-        //with variants separated with / (otro/tra)
-        qaAnswer.indexOf('/') && (qaAnswer = qaAnswer.split('/')[0]);
-        ret = qaAnswer
-                .trim()
-                .toLowerCase()
-                .indexOf(
-                    answer
-                        .trim()
-                        .toLowerCase()
-                )>=0 && answer.length/qaAnswer.length>=.8;
+        
+        qaAnswer == answer && (ret = true);
+        
+        //hack because current words base have many entries with
+        //variants separated with / (otro/tra)
+        if (!ret) {
+            qaAnswer.indexOf('/') && (qaAnswer = qaAnswer.split('/')[0]);
+            ret = qaAnswer.indexOf(answer)>=0 && answer.length/qaAnswer.length>=.8;
+        }
     }
     return ret;
 }
