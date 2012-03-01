@@ -74,13 +74,14 @@ button.check {
 	width: 100%;
 	display: block;
 	height: 2px;
+	background-color: #0B0;
 }
 
 .status-need-revision {
 	width: 100%;
 	display: block;
 	height: 2px;
-	background-color: yellow;
+	background-color: #BD9;
 	float: right;
 }
 
@@ -88,7 +89,15 @@ button.check {
 	width: 100%;
 	display: block;
 	height: 2px;
-	background-color: rgb(225,225,225);
+	background-color: #EE0;
+	float: right;
+}
+
+.status-unseen {
+    width: 100%;
+	display: block;
+	height: 2px;
+	background-color: #FFF;
 	float: right;
 }
 
