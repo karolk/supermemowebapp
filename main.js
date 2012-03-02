@@ -578,6 +578,11 @@ function qaUpdate() {
                 currentQuestion.a = $a.val();
                 saveLessons();
                 lessonMode();
+                
+                //cleanup
+                $form.find('input').val('');
+                $form.appendTo('.ui-templates');
+        
                 setTimeout(nextQuestionOrEndLesson, 1);
                 return false;
             });
