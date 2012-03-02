@@ -78,7 +78,7 @@ button.check {
 }
 
 .status-need-revision {
-	width: 100%;
+	width: 0%;
 	display: block;
 	height: 2px;
 	background-color: #BD9;
@@ -86,7 +86,7 @@ button.check {
 }
 
 .status-being-memorized {
-	width: 100%;
+	width: 0%;
 	display: block;
 	height: 2px;
 	background-color: #EE0;
