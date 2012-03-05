@@ -16,7 +16,8 @@ var lessons,
     roundDefaultTime = 1,
     lessonEnd,
     roundQA = [],
-    lastAsked = [];
+    lastAsked = [],
+    UI = {};
 
 //APP.fixtures
 function compatibilityFixes() {
@@ -108,6 +109,13 @@ function createQA(q, a) {
     else {
         return null;
     }
+}
+
+UI.showMessage = function(html) {
+    dialog(function() {
+    $('#dialog').empty();
+    $('#dialog').append( $(html) );
+    })
 }
 
 //UI.mode
@@ -391,28 +399,26 @@ function nextQuestionOrEndLesson(qa) {
         askQuestion(qa)
     }
     else {
-        dialog(function() {
-            $('#dialog').empty();
-            var totalAnswered = roundQA.length,
-                goodAnswers = 0;
+        var totalAnswered = roundQA.length,
+            goodAnswers = 0;
+            
             roundQA.forEach(function(answer){
                 goodAnswers+=answer;
             });
             
-            var badAnswers = totalAnswered - badAnswers,
-                correctPercent = Math.round(goodAnswers/totalAnswered*100);
+        var badAnswers = totalAnswered - badAnswers,
+            correctPercent = Math.round(goodAnswers/totalAnswered*100);
             
             isNaN(correctPercent) && (correctPercent = 0);
             
-                endMes = $(
-                    '<p>Time is up! Your result is '+
-                    '<span class="si">'+goodAnswers+
-                    '</span> correct answers out of '+
-                    totalAnswered+' questions ('+
-                    '<span class="si">'+correctPercent+
-                    '%</span>).</p>');
-            $('#dialog').append(endMes);
-        });
+            UI.showMessage(
+                '<p>Time is up! Your result is '+
+                '<span class="si">'+goodAnswers+
+                '</span> correct answers out of '+
+                totalAnswered+' questions ('+
+                '<span class="si">'+correctPercent+
+                '%</span>).</p>'
+            );
     }
 }
 
@@ -513,7 +519,11 @@ function askQuestion(qa) {
         $('#answer').trigger('focus');
     }    
     else {
-        editMode();
+        var message = '<p>Looks like you have memorized all questions in this lesson. Keep checking the status bar on the main page. It will change color to show you when you need to repeat this lesson.</p>';
+        if ( !currentLesson.length ) {
+            message = '<p>Looks like there aren\'t any questions here. Go to edit mode to add some.</p>'
+        }
+        UI.showMessage( message );
     }
     
 }
