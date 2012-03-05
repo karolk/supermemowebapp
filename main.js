@@ -519,9 +519,9 @@ function askQuestion(qa) {
         $('#answer').trigger('focus');
     }    
     else {
-        var message = '<p>Looks like you have memorized all questions in this lesson. Keep checking the status bar on the main page. It will change color to show you when you need to repeat this lesson.</p>';
+        var message = '<p class="hint">Looks like you have memorized all questions in this lesson. Keep checking the status bar on the main page. It will change color to show you when you need to repeat this lesson.</p>';
         if ( !currentLesson.length ) {
-            message = '<p>Looks like there aren\'t any questions here. Go to edit mode to add some.</p>'
+            message = '<p class="hint">Looks like there aren\'t any questions here. Go to edit mode to add some.</p>'
         }
         UI.showMessage( message );
     }
@@ -736,6 +736,8 @@ $('#app_menu a').click(function() {
         break;
         
         case '__delete__':
+            currentLessonName && deleteLesson(currentLessonName);
+            listMode();
         break;
         
         case '__deleteqa__':

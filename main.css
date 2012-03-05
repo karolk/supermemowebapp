@@ -39,7 +39,8 @@ input {
     border-left: 1px solid #DDD;
 }
 
-.status {
+.status,
+.hint {
 	color: #AAA;
 	font-size: 100%;
 }
