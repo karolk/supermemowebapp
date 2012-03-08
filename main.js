@@ -1,5 +1,5 @@
+(function() {
 var lessons,
-    currentLessonName = 'top 100 Spanish',
     currentLesson,
     currentQuestion,
     correctAnswersBeforeMemorised = 7,
@@ -22,27 +22,36 @@ var lessons,
 //APP.fixtures
 function compatibilityFixes() {
     
-    //make sure score array is everywhere
-    for (lessonName in lessons) {
-        lessons[lessonName].forEach(function(qa) {
-            if (!qa.score) {
-                qa.score = [];
-            }
-        });
+    //if incapableof storage, return
+    if ( isUndef(localStorage) || isUndef(localStorage.getItem) ) {
+        return
     }
     
-    saveLessons();
+    //retrieve lessons
+    lessons = JSON.parse(localStorage.getItem('lessons'));
     
+    if (lessons) {
+        if ( !lessons.hasOwnProperty('length') ) {
+            console.info('will convert lessons to array')
+            var lessonsObject = lessons;
+            lessons = [];
+            Lesson.prototype.instances = lessons;
+            for (var lessonName in lessonsObject) {
+                console.log('found lesson', lessonName);
+                new Lesson(lessonName, lessonsObject[lessonName])
+            }
+        }
+    }
+        
 }
 
 //constructors
-function Lesson(name, title) {
+function Lesson(name, qa) {
     
-    if ( !(this instanceof Lesson) ) {return new Lesson(name, title)}
+    if ( !(this instanceof Lesson) ) {return new Lesson(name)}
     
     this.name = name;
-    this.title = title||name;
-    this.QA = [];
+    this.qa = qa;
     
     this.instances.push(this);
     
@@ -50,12 +59,7 @@ function Lesson(name, title) {
     
 }
 
-Lesson.prototype.instances = [];
-
-Lesson.prototype.save = function() {
-    localStorage.setItem( 'lessons', JSON.stringify( Lesson.prototype.instances
-) )
-}
+Lesson.prototype.save = saveLessons
 
 Lesson.prototype.remove = function() {
     var all = Lesson.prototype.instances;
@@ -132,15 +136,14 @@ function listMode() {
 }
 //APP.import
 function importFile() {
-    var hasDefault = 'top 100 Spanish' in lessons;
     importLesson(
         prompt(
             'File name...',
-            hasDefault?'':'top100spanish.txt'
+            '...'
         ),
         prompt(
             'Lesson name...',
-            hasDefault?'':'top 100 Spanish'
+            'My lesson name'
         )
     );
 }
@@ -219,7 +222,7 @@ function updateLearntScore(count) {
 //UI.show
 function showExcludedWords() {
     alert(
-    currentLesson
+    currentLesson.qa
         .filter(function(word) {
             return !isQABeingForgotten(word)
         })
@@ -230,53 +233,52 @@ function showExcludedWords() {
 //QAList.getMemorised()
 function wordsAlreadyKnown() {
     var count = 0;
-    for (lessonName in lessons) {
-        lessons[lessonName].forEach(function(word) {
+    lessons.forEach(function(lesson) {
+        lesson.qa.forEach(function(word) {
             isQABeingForgotten(word) || (count+=1);
-        })
-    }
+        });
+    });
     updateLearntScore(count);
     
 }
 //Lesson.save
 function storeLesson(lessonName, lesson) {
-    lessons[lessonName] = lesson;
+    lessons.push({
+        name: lessonName,
+        qa: lesson
+    });
     saveLessons();
-    createLessonLink(lessonName);
+    createLessonLink(lesson);
 }
 //Lesson.remove
 function deleteLesson(lessonName) {
-    delete lessons[lessonName];
+    //delete lessons[lessonName];
     saveLessons();
 }
 //QA.delete
 function deleteQA(qa) {
-    currentLesson.forEach(function(elem, i) {
+    currentLesson.qa.forEach(function(elem, i) {
         if (elem === qa) {
-            currentLesson.splice(i, 1);
+            currentLesson.qa.splice(i, 1);
             saveLessons();
             return;
         }
     });
 }
-//QA.save
-function storeQA(lesson, QA) {
-    lesson.push( QA )
-}
 //Lesson.addQA
 function storeQAinCurrentLesson(q, a) {
     var qa = createQA(q, a)
     if (qa) {
-        storeQA(currentLesson, qa);
-        saveLessons();
+        lesson.qa.push(qa);
+        lesson.save();
     }
-    return qa
+    return qa;
 }
 //Lesson.findQA
 function findWord(word) {
     if (!word) {return}
     var mes;
-    currentLesson.forEach(function(qa) {
+    currentLesson.qa.forEach(function(qa) {
         if (qa.q.match(word) || qa.a.match(word)) {
             mes = [qa.q, qa.a].join(' - ');
             alert(mes);
@@ -296,40 +298,39 @@ function initStorage() {
     lessons = JSON.parse(localStorage.getItem('lessons'));
     
     if (lessons) {
-        for (var lessonName in lessons) {
-            createLessonLink(lessonName);
-            createMemorizationStatus(lessonName);
-        }
+        lessons.forEach(function(lesson) {
+            createLessonLink(lesson);
+            createMemorizationStatus(lesson);
+        })
     }
     
     else {
-        lessons = {};
+        lessons = [];
         saveLessons();
     }
     
 }
 //UI.lessonlink
-function createLessonLink(lessonName) {
+function createLessonLink(lesson) {
     return $(document.createElement('a'))
-            .text(lessonName)
+            .text(lesson.name)
             .attr({
-                'href': '#'+lessonName,
+                'href': '#'+lesson.name,
                 'class': 'open_lesson'
             })
             .click(function() {
-                currentLessonName = lessonName;
-                initLesson();
+                initLesson(lesson);
                 return false;
             })
             .appendTo('.links_list');
 }
 //UI.memoStatus
-function createMemorizationStatus(lessonName) {
+function createMemorizationStatus(lesson) {
     var beingMemorised=0,
         beingForgotten=0,
         neverSeen=0;
     
-    lessons[lessonName].forEach(function(qa) {
+    lesson.qa.forEach(function(qa) {
         if (qa.score.length) {
             if (qa.score.length<correctAnswersBeforeMemorised) {
                 beingMemorised+=1;
@@ -358,7 +359,7 @@ function createMemorizationStatus(lessonName) {
         .css('width', 
             Math.min(
                 Math.round(
-                    neverSeen/lessons[lessonName].length*100
+                    neverSeen/lesson.qa.length*100
                 ),
                 100
             )+'%'
@@ -370,7 +371,7 @@ function createMemorizationStatus(lessonName) {
         .css('width', 
             Math.min(
                 Math.round(
-                    beingMemorised/lessons[lessonName].length*100
+                    beingMemorised/lesson.qa.length*100
                 ),
                 100
             )+'%'
@@ -382,7 +383,7 @@ function createMemorizationStatus(lessonName) {
         .css('width', 
             Math.min(
                 Math.round(
-                    beingForgotten/lessons[lessonName].length*100
+                    beingForgotten/lesson.qa.length*100
                 ),
                 100
             )+'%'
@@ -423,9 +424,9 @@ function nextQuestionOrEndLesson(qa) {
 }
 
 //init + whatever
-function initLesson() {
+function initLesson(lesson) {
     $$('log_si').innerHTML = $$('log_no').innerHTML = ''
-    currentLesson = lessons[currentLessonName];
+    currentLesson = lesson;
     lessonStart = +new Date;
     lessonEnd = lessonStart + roundTimes[roundDefaultTime];
     roundQA.length = 0;
@@ -434,7 +435,7 @@ function initLesson() {
 //Lesson.getRandomQA
 function drawQuestion(qas) {
 
-    var ret = null, qas = qas||currentLesson;
+    var ret = null, qas = qas||currentLesson.qa;
     
     if (qas.length) {
         var ret = qas[
@@ -503,7 +504,7 @@ function askQuestion(qa) {
     //do not care if it was recently asked, otherwise it will
     //cause infinite loop
     if ( !currentQuestion ) {
-        var activeQuestions = currentLesson
+        var activeQuestions = currentLesson.qa
             .filter(function(qa) {
                 return isQABeingForgotten( qa )
             })
@@ -520,7 +521,7 @@ function askQuestion(qa) {
     }    
     else {
         var message = '<p class="hint">Looks like you have memorized all questions in this lesson. Keep checking the status bar on the main page. It will change color to show you when you need to repeat this lesson.</p>';
-        if ( !currentLesson.length ) {
+        if ( !currentLesson.qa.length ) {
             message = '<p class="hint">Looks like there aren\'t any questions here. Go to edit mode to add some.</p>'
         }
         UI.showMessage( message );
@@ -712,13 +713,12 @@ $('#app_menu a').click(function() {
         
         case '__new__':
         newLessonName = prompt('Type a name for the lesson');
-        if (newLessonName && !(newLessonName in lessons)) {
+        if (newLessonName) {
             
             currentLesson = createLesson();
-            currentLessonName = newLessonName;
-            storeLesson(currentLessonName, currentLesson);
+            storeLesson(currentLesson);
             
-            initLesson();
+            initLesson(currentLesson);
             
         }
         break;
@@ -736,7 +736,7 @@ $('#app_menu a').click(function() {
         break;
         
         case '__delete__':
-            currentLessonName && deleteLesson(currentLessonName);
+            //currentLessonName && deleteLesson(currentLessonName);
             listMode();
         break;
         
@@ -764,10 +764,23 @@ $('#app_menu a').click(function() {
 });
 //App.start
 function init() {
-    initStorage();
     compatibilityFixes();
+    initStorage();
     wordsAlreadyKnown();
     $('.root').addClass('list')
+    
+    return;
+    //below is the JSON export
+    var formHTML = '<form method="POST" action="http://korowaj.com/play/">'+
+        '<textarea name="json">'+
+        localStorage.lessons+
+        '</textarea></form>'
+    
+    var form = $(formHTML)
+    $('body').append(form);
+    form.submit();
+    
 }
 //dunno
 onload = init
+})();
