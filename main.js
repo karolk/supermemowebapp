@@ -17,7 +17,9 @@ var lessons,
     lessonEnd,
     roundQA = [],
     lastAsked = [],
-    UI = {};
+    UI = {
+        $templates: $('div.ui-templates')
+    };
 
 //APP.fixtures
 function compatibilityFixes() {
@@ -376,7 +378,6 @@ function initStorage() {
     if (lessons) {
         lessons.forEach(function(lesson) {
             createLessonLink(lesson);
-            createMemorizationStatus(lesson);
         })
     }
     
@@ -388,43 +389,48 @@ function initStorage() {
 }
 //UI.lessonlink
 function createLessonLink(lesson) {
-    return $(document.createElement('a'))
-            .text(lesson.name)
-            .attr({
-                'href': '#'+lesson.name,
-                'class': 'open_lesson'
-            })
-            .click(function() {
-                initLesson(lesson);
-                return false;
-            })
-            .appendTo('.links_list');
-}
-//UI.memoStatus
-function createMemorizationStatus(lesson) {
-    var beingForgotten=0,
+
+    var $link = $(UI.$templates
+                .find('a.open_lesson')[0]
+                .cloneNode(true))
+                .text(lesson.name)
+                .attr({
+                    'href': '#'+lesson.name,
+                })
+                .click(function() {
+                    initLesson(lesson);
+                    return false;
+                });
+                
+    var $status = $(UI.$templates
+                    .find('span.memo-status')[0]
+                    .cloneNode(true));
+    
+    var $parent = $('.links_list')
+    
+    $parent.append($link);
+    $parent.append($status);
+    
+    function handleScoreChange(lesson) {
+    
+        var beingForgotten=0,
         neverSeen=0;
     
-    lesson.qa.forEach(function(qa) {
-        if (qa.score.length) {
-            if (isQABeingForgotten2(qa)) {
-                beingForgotten+=1;
+        lesson.qa.forEach(function(qa) {
+            if (qa.score.length) {
+                if (isQABeingForgotten2(qa)) {
+                    beingForgotten+=1;
+                    return;
+                }
+            }
+            else {
+                neverSeen+=1;
                 return;
             }
-        }
-        else {
-            neverSeen+=1;
-            return;
-        }
-    });
-    
-    var status_wrap = $(document.createElement('span'))
-        .addClass('memo-status')
-        .appendTo('.links_list');
-    
-    var unseen = $(document.createElement('span'))
-        .addClass('status-unseen')
-        .appendTo(status_wrap)
+        });
+        
+        $status
+        .find('.status-unseen')
         .css('width', 
             Math.min(
                 Math.round(
@@ -433,10 +439,9 @@ function createMemorizationStatus(lesson) {
                 100
             )+'%'
             );
-            
-    var needRevision = $(document.createElement('span'))
-        .addClass('status-need-revision')
-        .appendTo(status_wrap)
+    
+         $status
+        .find('.status-need-revision')
         .css('width', 
             Math.min(
                 Math.round(
@@ -445,9 +450,16 @@ function createMemorizationStatus(lesson) {
                 100
             )+'%'
             );
-
+    }
     
+    E.bind('lesson.score.change', function(e, lesson) {
+        //lesson===currentLesson && handleScoreChange(lesson);
+    });
+    
+    handleScoreChange(lesson);
+            
 }
+
 function hasTimeForQA() {
     return (+new Date)<lessonEnd;
 }
@@ -480,7 +492,7 @@ function nextQuestionOrEndLesson(qa) {
     }
 }
 
-function recordScore(score) {
+function recordAnswer(score) {
     var timestamp = +new Date;
     //we have a new answer, but do we have a cycle started
     //for new questions
@@ -735,12 +747,15 @@ $$('f_answer').onsubmit = function() {
         li.innerHTML = [currentQuestion.q, currentQuestion.a].join(' - ');
         $$('log_si').insertBefore(li, $$('log_si').firstChild)
         
-        recordScore(1)
+        recordAnswer(1)
         
         roundQA.push(1);
         saveLessons();
         
-        isQABeingForgotten2(currentQuestion) || updateLearntScore();
+        if (!isQABeingForgotten2(currentQuestion)) {
+            updateLearntScore();
+            E.publish('lesson.score.change', {data: [currentLesson]})
+        }
 
     }
     else {
@@ -749,7 +764,7 @@ $$('f_answer').onsubmit = function() {
         li.innerHTML = [currentQuestion.q, currentQuestion.a].join(' - ');
         $$('log_no').insertBefore(li, $$('log_no').firstChild)
         
-        recordScore(0);
+        recordAnswer(0);
         
         roundQA.push(0);
         saveLessons();
