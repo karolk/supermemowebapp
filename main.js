@@ -214,37 +214,6 @@ function importLesson(fileName, lessonName) {
     });
     
 }
-//QA.isBeingForgotten
-function isQABeingForgotten(qa) {
-    
-    var ret = false,
-        correctAnswers = qa.score
-            .filter(function(ans) {return !!ans[1]}),
-        correctAnswersLen = correctAnswers.length,
-        cycleIndex = ~~(correctAnswersLen/correctAnswersBeforeMemorised),
-        previousCycleIndex = cycleIndex-1,
-        nowDS = +new Date,
-        previousCycleLastAnswerDS = cycleIndex>0 ? 
-            correctAnswers[(cycleIndex * correctAnswersBeforeMemorised - 1)][0]
-:
-            null;
-        
-        if (previousCycleLastAnswerDS) {
-            var nextCycleStartDS = previousCycleLastAnswerDS +
-                conf.intervals[cycleIndex] * conf.millsec.day;
-            //if it's later or same than the nextCycleStartDS
-            if (nowDS >= nextCycleStartDS) {
-                ret = true
-            }
-        }
-        //otherwise we are in the 1st memorisation phase
-        else {
-            ret = true
-        }
-    
-    return ret;
-    
-}
 
 function isCycleComplete(cycleAnswers) {
     
@@ -433,21 +402,14 @@ function createLessonLink(lesson) {
 }
 //UI.memoStatus
 function createMemorizationStatus(lesson) {
-    var beingMemorised=0,
-        beingForgotten=0,
+    var beingForgotten=0,
         neverSeen=0;
     
     lesson.qa.forEach(function(qa) {
         if (qa.score.length) {
-            if (qa.score.length<correctAnswersBeforeMemorised) {
-                beingMemorised+=1;
+            if (isQABeingForgotten2(qa)) {
+                beingForgotten+=1;
                 return;
-            }
-            else {
-                if (isQABeingForgotten2(qa)) {
-                    beingForgotten+=1;
-                    return;
-                }
             }
         }
         else {
@@ -467,18 +429,6 @@ function createMemorizationStatus(lesson) {
             Math.min(
                 Math.round(
                     neverSeen/lesson.qa.length*100
-                ),
-                100
-            )+'%'
-            );
-            
-    var notMemorized = $(document.createElement('span'))
-        .addClass('status-being-memorized')
-        .appendTo(status_wrap)
-        .css('width', 
-            Math.min(
-                Math.round(
-                    beingMemorised/lesson.qa.length*100
                 ),
                 100
             )+'%'

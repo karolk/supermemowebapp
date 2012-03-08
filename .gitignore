@@ -2,5 +2,5 @@
 deploy.sh
 test.sh
 offline.manifest
-exampledata.json
+exampledata*.json
 notes.*
