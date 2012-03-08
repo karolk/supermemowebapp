@@ -31,17 +31,48 @@ function compatibilityFixes() {
     lessons = JSON.parse(localStorage.getItem('lessons'));
     
     if (lessons) {
+        //fixture changing lessons object into lessons array
         if ( !lessons.hasOwnProperty('length') ) {
-            console.info('will convert lessons to array')
             var lessonsObject = lessons;
             lessons = [];
             Lesson.prototype.instances = lessons;
             for (var lessonName in lessonsObject) {
-                console.log('found lesson', lessonName);
                 new Lesson(lessonName, lessonsObject[lessonName])
             }
         }
+        
+        //fixture for new cycle data structure
+        if ( !lessons[0].qa[0].c ) {
+            lessons.forEach(function(les) {
+                les.qa.forEach(function(qa) {
+                        
+                        var count = 0;
+                        
+                        //this will also fix the previous
+                        //property c
+                        qa.c = []
+                        
+                        qa.score[0] && qa.c.push(qa.score[0][0]);
+                        
+                        qa.score.forEach(function(ch, i) {
+                            if (ch[1]) {
+                                count++;
+                            }
+                            if (count===7) {
+                                count=0;
+                                if (qa.score[i+1]) {
+                                    qa.c.push(qa.score[i+1][0])
+                                }
+                            }
+                        });
+    
+                });
+            });
+        }
+        saveLessons();
+        
     }
+    
         
 }
 
@@ -107,7 +138,8 @@ function createQA(q, a) {
         return {
             q: q,
             a: a,
-            score: []
+            score: [],
+            c: []
         }
     }
     else {
@@ -213,6 +245,81 @@ function isQABeingForgotten(qa) {
     return ret;
     
 }
+
+function isCycleComplete(cycleAnswers) {
+    
+    var ret = false,
+        answersCount = 0,
+        correctStreakCount = 0;
+        
+    cycleAnswers.forEach(function(ch) {
+    
+        answersCount+=ch[1];
+        if (ch[1]) {
+            correctStreakCount++;
+        }
+        else {
+            correctStreakCount=0;
+        }
+        
+        //can return 
+        if (
+            correctStreakCount >= Math.round(.75*correctAnswersBeforeMemorised)
+            ) {
+                ret = true;
+                return //break
+            }
+        
+        if (answersCount >= correctAnswersBeforeMemorised) {
+            ret = true;
+            return //break
+        }
+        
+    });
+    
+    return ret;
+    
+};
+
+function getCurrentCycleChallenges(qa) {
+    return qa.score.filter(
+        //get challenges with date greater or equal to the current
+        //cycle starting date qa.c[qa.c.length-1]
+            function(ch) {
+                return qa.c.length && ch[0] >= qa.c[qa.c.length-1]
+            }
+        );
+};
+
+function isQABeingForgotten2(qa) {
+    
+    var ret = false,
+        cycleIndex = qa.c.length-1,
+        currentCycleCh = getCurrentCycleChallenges(qa),
+        currentCycleComplete = isCycleComplete(currentCycleCh);
+        
+        if (currentCycleComplete) {
+            
+            var nextCycleIndex = cycleIndex + 1;
+                currentCycleLastAnswerDate = currentCycleCh[currentCycleCh.length-1][0],
+                nowDS = +new Date,
+                nextCycleStartDS = currentCycleLastAnswerDate +
+                conf.intervals[nextCycleIndex] * conf.millsec.day;
+                
+            //check if enough time passed to start next cycle
+            if (nowDS >= nextCycleStartDS) {
+                ret = true
+            }
+
+        }
+        else {
+            ret = true;
+        }
+        
+        return ret;
+        
+};
+
 //UI.update..
 function updateLearntScore(count) {
     isUndef(count) && (count = 1);
@@ -224,7 +331,7 @@ function showExcludedWords() {
     alert(
     currentLesson.qa
         .filter(function(word) {
-            return !isQABeingForgotten(word)
+            return !isQABeingForgotten2(word)
         })
         .map(function(word) {return [word.q, word.a].join(' - ')})
         .join(', ')
@@ -235,7 +342,7 @@ function wordsAlreadyKnown() {
     var count = 0;
     lessons.forEach(function(lesson) {
         lesson.qa.forEach(function(word) {
-            isQABeingForgotten(word) || (count+=1);
+            isQABeingForgotten2(word) || (count+=1);
         });
     });
     updateLearntScore(count);
@@ -337,7 +444,7 @@ function createMemorizationStatus(lesson) {
                 return;
             }
             else {
-                if (isQABeingForgotten(qa)) {
+                if (isQABeingForgotten2(qa)) {
                     beingForgotten+=1;
                     return;
                 }
@@ -423,6 +530,21 @@ function nextQuestionOrEndLesson(qa) {
     }
 }
 
+function recordScore(score) {
+    var timestamp = +new Date;
+    //we have a new answer, but do we have a cycle started
+    //for new questions
+    if (
+        !currentQuestion.c.length ||
+        isCycleComplete( getCurrentCycleChallenges( currentQuestion ) )
+    ) {
+        currentQuestion.c.push(timestamp)
+    }
+    
+    currentQuestion.score.push([timestamp, score])
+    
+}
+
 //init + whatever
 function initLesson(lesson) {
     $$('log_si').innerHTML = $$('log_no').innerHTML = ''
@@ -470,7 +592,7 @@ function canQABeAsked(qa) {
     }
     
     //2. if question is well remembered do not use it
-    if ( !(isQABeingForgotten(qa)) ) {
+    if ( !(isQABeingForgotten2(qa)) ) {
         ret = false;
     }
     
@@ -506,7 +628,7 @@ function askQuestion(qa) {
     if ( !currentQuestion ) {
         var activeQuestions = currentLesson.qa
             .filter(function(qa) {
-                return isQABeingForgotten( qa )
+                return isQABeingForgotten2( qa )
             })
         if (activeQuestions.length) {
             currentQuestion = drawQuestion(activeQuestions);
@@ -653,7 +775,8 @@ function checkAnswer(qaAnswer, answer) {
 $$('f_answer').onsubmit = function() {
     
     var answer = $$('answer').value,
-        nextQuestion;
+        nextQuestion,
+        timeStamp = +new Date;
     
     if ( checkAnswer(currentQuestion.a, answer) ) {
 
@@ -661,12 +784,13 @@ $$('f_answer').onsubmit = function() {
         li.className = 'si'
         li.innerHTML = [currentQuestion.q, currentQuestion.a].join(' - ');
         $$('log_si').insertBefore(li, $$('log_si').firstChild)
-                
-        currentQuestion.score.push([+new Date, 1]);
+        
+        recordScore(1)
+        
         roundQA.push(1);
         saveLessons();
         
-        isQABeingForgotten(currentQuestion) || updateLearntScore();
+        isQABeingForgotten2(currentQuestion) || updateLearntScore();
 
     }
     else {
@@ -675,7 +799,8 @@ $$('f_answer').onsubmit = function() {
         li.innerHTML = [currentQuestion.q, currentQuestion.a].join(' - ');
         $$('log_no').insertBefore(li, $$('log_no').firstChild)
         
-        currentQuestion.score.push([+new Date, 0]);
+        recordScore(0);
+        
         roundQA.push(0);
         saveLessons();
         
