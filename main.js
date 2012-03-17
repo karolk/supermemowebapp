@@ -217,12 +217,31 @@ function importLesson(fileName, lessonName) {
     
 }
 
-function isCycleComplete(cycleAnswers) {
+function isCycleComplete(cycleAnswers, allScores) {
     
+    //there are 3 ways in which cycle can be completed
+    //1. answering the question correctly n times where //n=correctAnswersBeforeMemorised
+    //2. answering the question correctly m times in a row
+    //where m = 0.75*correctAnswersBeforeMemorised
+    //this is known as lucky streak
+    //3. answering the question correctly o times in a row
+    //where o = 0.25*correctAnswersBeforeMemorised. This is under condition
+    //that the question ws previously answered correctly 1.5*correctAnswersBeforeMemorised times in a row (double lucky streak)
     var ret = false,
         answersCount = 0,
-        correctStreakCount = 0;
-        
+        correctStreakCount = 0,
+        recentCorrectCount = 0,
+        allScoresReversed = allScores.slice().reverse();
+    
+    allScoresReversed.forEach(function(ch) {
+        if (ch[1]) {
+            recentCorrectCount++;
+        }
+        else {
+            return;
+        }
+    })
+    
     cycleAnswers.forEach(function(ch) {
     
         answersCount+=ch[1];
@@ -233,7 +252,12 @@ function isCycleComplete(cycleAnswers) {
             correctStreakCount=0;
         }
         
-        //can return 
+        if (recentCorrectCount >= Math.round(1.5*correctAnswersBeforeMemorised) &&  correctStreakCount >= Math.round(.25*correctAnswersBeforeMemorised)
+            ) {
+                ret = true;
+                return //break
+            }
+            
         if (
             correctStreakCount >= Math.round(.75*correctAnswersBeforeMemorised)
             ) {
@@ -252,22 +276,46 @@ function isCycleComplete(cycleAnswers) {
     
 };
 
-function getCurrentCycleChallenges(qa) {
-    return qa.score.filter(
-        //get challenges with date greater or equal to the current
-        //cycle starting date qa.c[qa.c.length-1]
-            function(ch) {
-                return qa.c.length && ch[0] >= qa.c[qa.c.length-1]
-            }
+function getGrouppedChallenges(qa) {
+    
+    var ret=[];
+    
+    qa.c.forEach(function(cycleStart, ci) {
+        ret.push(
+            qa.score.filter(function(challenge) {
+                //if there is the next cycle then push challenges
+                //bigger or = than the beginning of current cycle
+                //and smaller than the next cycle (qa.c[ci+1]
+                //otherwise just push all
+                if (challenge[0]>=cycleStart) {
+                    if (qa.c[ci+1]) {
+                        return challenge[0] < qa.c[ci+1]
+                    }
+                    else {
+                        return true
+                    }
+                }
+                else {
+                    return false;
+                }
+            })
         );
+    });
+    
+    return ret;
+}
+
+function getCurrentCycleChallenges(qa) {
+    return getGrouppedChallenges(qa).pop() || [];
 };
 
-function isQABeingForgotten2(qa) {
+function isQABeingForgotten(qa) {
     
     var ret = false,
         cycleIndex = qa.c.length-1,
+        previousCycleIndex = cycleIndex-1, //can be -1 which is incorrect
         currentCycleCh = getCurrentCycleChallenges(qa),
-        currentCycleComplete = isCycleComplete(currentCycleCh);
+        currentCycleComplete = isCycleComplete(currentCycleCh, qa.score);
         
         if (currentCycleComplete) {
             
@@ -302,7 +350,7 @@ function showExcludedWords() {
     alert(
     currentLesson.qa
         .filter(function(word) {
-            return !isQABeingForgotten2(word)
+            return !isQABeingForgotten(word)
         })
         .map(function(word) {return [word.q, word.a].join(' - ')})
         .join(', ')
@@ -313,7 +361,7 @@ function wordsAlreadyKnown() {
     var count = 0;
     lessons.forEach(function(lesson) {
         lesson.qa.forEach(function(word) {
-            isQABeingForgotten2(word) || (count+=1);
+            isQABeingForgotten(word) || (count+=1);
         });
     });
     updateLearntScore(count);
@@ -418,7 +466,7 @@ function createLessonLink(lesson) {
     
         lesson.qa.forEach(function(qa) {
             if (qa.score.length) {
-                if (isQABeingForgotten2(qa)) {
+                if (isQABeingForgotten(qa)) {
                     beingForgotten+=1;
                     return;
                 }
@@ -498,7 +546,7 @@ function recordAnswer(score) {
     //for new questions
     if (
         !currentQuestion.c.length ||
-        isCycleComplete( getCurrentCycleChallenges( currentQuestion ) )
+        isCycleComplete( getCurrentCycleChallenges( currentQuestion ) , currentQuestion.score)
     ) {
         currentQuestion.c.push(timestamp)
     }
@@ -554,7 +602,7 @@ function canQABeAsked(qa) {
     }
     
     //2. if question is well remembered do not use it
-    if ( !(isQABeingForgotten2(qa)) ) {
+    if ( !(isQABeingForgotten(qa)) ) {
         ret = false;
     }
     
@@ -590,7 +638,7 @@ function askQuestion(qa) {
     if ( !currentQuestion ) {
         var activeQuestions = currentLesson.qa
             .filter(function(qa) {
-                return isQABeingForgotten2( qa )
+                return isQABeingForgotten( qa )
             })
         if (activeQuestions.length) {
             currentQuestion = drawQuestion(activeQuestions);
@@ -752,7 +800,7 @@ $$('f_answer').onsubmit = function() {
         roundQA.push(1);
         saveLessons();
         
-        if (!isQABeingForgotten2(currentQuestion)) {
+        if (!isQABeingForgotten(currentQuestion)) {
             updateLearntScore();
             E.publish('lesson.score.change', {data: [currentLesson]})
         }
