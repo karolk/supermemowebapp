@@ -22,61 +22,7 @@ var lessons,
     };
 
 //APP.fixtures
-function compatibilityFixes() {
-    
-    //if incapableof storage, return
-    if ( isUndef(localStorage) || isUndef(localStorage.getItem) ) {
-        return
-    }
-    
-    //retrieve lessons
-    lessons = JSON.parse(localStorage.getItem('lessons'));
-    
-    if (lessons) {
-        //fixture changing lessons object into lessons array
-        if ( !lessons.hasOwnProperty('length') ) {
-            var lessonsObject = lessons;
-            lessons = [];
-            Lesson.prototype.instances = lessons;
-            for (var lessonName in lessonsObject) {
-                new Lesson(lessonName, lessonsObject[lessonName])
-            }
-        }
-        
-        //fixture for new cycle data structure
-        if ( !lessons[0].qa[0].c ) {
-            lessons.forEach(function(les) {
-                les.qa.forEach(function(qa) {
-                        
-                        var count = 0;
-                        
-                        //this will also fix the previous
-                        //property c
-                        qa.c = []
-                        
-                        qa.score[0] && qa.c.push(qa.score[0][0]);
-                        
-                        qa.score.forEach(function(ch, i) {
-                            if (ch[1]) {
-                                count++;
-                            }
-                            if (count===7) {
-                                count=0;
-                                if (qa.score[i+1]) {
-                                    qa.c.push(qa.score[i+1][0])
-                                }
-                            }
-                        });
-    
-                });
-            });
-        }
-        saveLessons();
-        
-    }
-    
-        
-}
+function compatibilityFixes() {}
 
 //constructors
 function Lesson(name, qa) {
@@ -84,15 +30,30 @@ function Lesson(name, qa) {
     if ( !(this instanceof Lesson) ) {return new Lesson(name)}
     
     this.name = name;
-    this.qa = qa;
+    this.qa = qa || [];
     
     this.instances.push(this);
-    
-    this.save();
+        
+    E.publish('lesson', {data:[this]});
+    this.triggerMemorizationStatusUpdate();
     
 }
 
-Lesson.prototype.save = saveLessons
+Lesson.prototype.instances = [];
+
+Lesson.prototype.toJSON = function() {
+    return {
+        name: this.name,
+        qa: this.qa
+    }
+};
+
+Lesson.prototype.save = function(allLessons) {
+    localStorage.setItem(
+        'lessons',
+        JSON.stringify( allLessons||this.instances )
+    );
+}
 
 Lesson.prototype.remove = function() {
     var all = Lesson.prototype.instances;
@@ -103,6 +64,45 @@ Lesson.prototype.remove = function() {
         }
     });
     Lesson.prototype.save();
+}
+
+Lesson.prototype.getMemorizationStatus = function() {
+
+    var ret = {
+        length: this.qa.length,
+        beingForgotten: 0,
+        neverSeen: 0
+    }
+    
+    this.qa.forEach(function(qa) {
+        if (qa.score.length) {
+            if (isQABeingForgotten(qa)) {
+                ret.beingForgotten+=1;
+                return;
+            }
+        }
+        else {
+            ret.neverSeen+=1;
+            return;
+        }
+    });
+    
+    return ret;
+
+}
+
+Lesson.prototype.triggerMemorizationStatusUpdate = function() {
+    E.publish('lesson.score', {data:[this.getMemorizationStatus(), this]})
+}
+
+//REFACTOR
+Lesson.prototype.start = function() {
+    currentLesson = this;
+    lessonStart = +new Date;
+    lessonEnd = lessonStart + roundTimes[roundDefaultTime];
+    roundQA.length = 0;
+    
+    E.publish('lesson.start', {data:[this]});
 }
 
 Lesson.prototype.addQA = function() {
@@ -116,6 +116,12 @@ Lesson.prototype.getRandomQA = function() {
 Lesson.prototype.removeQA = function() {
 
 }
+
+E.bind('lessons', function(e, lessons) {
+    lessons.forEach(function(lessonData) {
+        new Lesson(lessonData.name, lessonData.qa)
+    });
+})
 
 function QA() {
 
@@ -168,6 +174,71 @@ function editMode() {
 function listMode() {
     $('.root').attr('class', 'root list');
 }
+    
+E.bind('lesson', function(e, lesson) {
+    var lessonLauncherTempl = $('.lesson-launcher');
+    
+    var lessonLauncher = $( lessonLauncherTempl[0].cloneNode(true) )
+        .template({
+            name: lesson.name,
+            href: '#'+lesson.name,
+            lesson: lesson,
+        });
+        
+    lessonLauncher
+        .find('a')
+            .on('click', function(e) {
+                lesson.start();
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        
+    $('ul.lesson-list')
+        .append(lessonLauncher);
+    
+    E.bind('lesson.score', function(e, score, updatedLesson) {
+        if (updatedLesson === lesson) {
+        
+            var $node = lessonLauncher.find('.memo-status');
+            
+            $node
+            .find('.status-unseen')
+                .css('width', 
+                    Math.min(
+                        Math.round(score.neverSeen/score.length*100),
+                        100
+                    )+'%'
+                );
+                
+            $node
+            .find('.status-need-revision')
+                .css('width', 
+                    Math.min(
+                        Math.round(score.beingForgotten/score.length*100),
+                        100
+                    )+'%'
+                );
+                
+        }
+    });
+        
+});
+
+E.bind('lesson.score', function(e, score) {
+    liveData.knownWords += (score.length-score.beingForgotten-score.neverSeen);
+    $('#known_words').text(liveData.knownWords);
+});
+
+E.bind('qa.memorised', function(e, qa) {
+    liveData.knownWords += 1;
+    $('#known_words').text(liveData.knownWords);
+});
+
+E.bind('lesson.start', function() {
+    $('#log_si').text('');
+    $('#log_no').text('');
+    nextQuestionOrEndLesson();
+})
 //APP.import
 function importFile() {
     importLesson(
@@ -180,10 +251,6 @@ function importFile() {
             'My lesson name'
         )
     );
-}
-//Leson.save
-function saveLessons() {
-    localStorage.setItem( 'lessons', JSON.stringify(lessons) )
 }
 //Lesson.import or APP.import
 function importLesson(fileName, lessonName) {
@@ -211,7 +278,8 @@ function importLesson(fileName, lessonName) {
     
         })
 
-        storeLesson(lessonName||fileName.split('.')[0], lesson);
+        var newLesson = new Lesson(lessonName||fileName.split('.')[0], lesson);
+        newLesson.save();
     
     });
     
@@ -230,17 +298,16 @@ function isCycleComplete(cycleAnswers, allScores) {
     var ret = false,
         answersCount = 0,
         correctStreakCount = 0,
-        recentCorrectCount = 0,
-        allScoresReversed = allScores.slice().reverse();
-    
-    allScoresReversed.forEach(function(ch) {
-        if (ch[1]) {
-            recentCorrectCount++;
-        }
-        else {
-            return;
-        }
-    })
+        recentCorrectCount = allScores
+            .slice() //copy
+            .reverse() //reverse
+            .slice(0, Math.round(1.5*correctAnswersBeforeMemorised)) //get n first elements
+            .map(function(ch) {
+                return ch[1]
+            })
+            .reduce(function(a,b) {
+                return a+b;
+            })
     
     cycleAnswers.forEach(function(ch) {
     
@@ -339,12 +406,6 @@ function isQABeingForgotten(qa) {
         
 };
 
-//UI.update..
-function updateLearntScore(count) {
-    isUndef(count) && (count = 1);
-    liveData.knownWords += count;
-    $('#known_words').text(liveData.knownWords);
-}
 //UI.show
 function showExcludedWords() {
     alert(
@@ -356,37 +417,17 @@ function showExcludedWords() {
         .join(', ')
     )
 }
-//QAList.getMemorised()
-function wordsAlreadyKnown() {
-    var count = 0;
-    lessons.forEach(function(lesson) {
-        lesson.qa.forEach(function(word) {
-            isQABeingForgotten(word) || (count+=1);
-        });
-    });
-    updateLearntScore(count);
-    
-}
-//Lesson.save
-function storeLesson(lessonName, lesson) {
-    lessons.push({
-        name: lessonName,
-        qa: lesson
-    });
-    saveLessons();
-    createLessonLink(lesson);
-}
+
 //Lesson.remove
 function deleteLesson(lessonName) {
     //delete lessons[lessonName];
-    saveLessons();
 }
 //QA.delete
 function deleteQA(qa) {
     currentLesson.qa.forEach(function(elem, i) {
         if (elem === qa) {
             currentLesson.qa.splice(i, 1);
-            saveLessons();
+            currentLesson.save();
             return;
         }
     });
@@ -421,91 +462,14 @@ function initStorage() {
     }
     
     //retrieve lessons
-    lessons = JSON.parse(localStorage.getItem('lessons'));
+    var lessons = JSON.parse(localStorage.getItem('lessons'));
     
-    if (lessons) {
-        lessons.forEach(function(lesson) {
-            createLessonLink(lesson);
-        })
-    }
-    
-    else {
+    if (!lessons) {
         lessons = [];
-        saveLessons();
     }
     
-}
-//UI.lessonlink
-function createLessonLink(lesson) {
-
-    var $link = $(UI.$templates
-                .find('a.open_lesson')[0]
-                .cloneNode(true))
-                .text(lesson.name)
-                .attr({
-                    'href': '#'+lesson.name,
-                })
-                .click(function() {
-                    initLesson(lesson);
-                    return false;
-                });
-                
-    var $status = $(UI.$templates
-                    .find('span.memo-status')[0]
-                    .cloneNode(true));
+    E.publish('lessons', {data:[lessons]});
     
-    var $parent = $('.links_list')
-    
-    $parent.append($link);
-    $parent.append($status);
-    
-    function handleScoreChange(lesson) {
-    
-        var beingForgotten=0,
-        neverSeen=0;
-    
-        lesson.qa.forEach(function(qa) {
-            if (qa.score.length) {
-                if (isQABeingForgotten(qa)) {
-                    beingForgotten+=1;
-                    return;
-                }
-            }
-            else {
-                neverSeen+=1;
-                return;
-            }
-        });
-        
-        $status
-        .find('.status-unseen')
-        .css('width', 
-            Math.min(
-                Math.round(
-                    neverSeen/lesson.qa.length*100
-                ),
-                100
-            )+'%'
-            );
-    
-         $status
-        .find('.status-need-revision')
-        .css('width', 
-            Math.min(
-                Math.round(
-                    beingForgotten/lesson.qa.length*100
-                ),
-                100
-            )+'%'
-            );
-    }
-    
-    E.bind('lesson.score.change', function(e, lesson) {
-        //lesson===currentLesson && handleScoreChange(lesson);
-    });
-    
-    handleScoreChange(lesson);
-            
 }
 
 function hasTimeForQA() {
@@ -555,15 +519,6 @@ function recordAnswer(score) {
     
 }
 
-//init + whatever
-function initLesson(lesson) {
-    $$('log_si').innerHTML = $$('log_no').innerHTML = ''
-    currentLesson = lesson;
-    lessonStart = +new Date;
-    lessonEnd = lessonStart + roundTimes[roundDefaultTime];
-    roundQA.length = 0;
-    nextQuestionOrEndLesson();
-}
 //Lesson.getRandomQA
 function drawQuestion(qas) {
 
@@ -719,7 +674,7 @@ function qaUpdate() {
             $form.submit(function() {
                 currentQuestion.q = $q.val();
                 currentQuestion.a = $a.val();
-                saveLessons();
+                currentLesson.save();
                 lessonMode();
                 
                 //cleanup
@@ -798,11 +753,11 @@ $$('f_answer').onsubmit = function() {
         recordAnswer(1)
         
         roundQA.push(1);
-        saveLessons();
+        
+        currentLesson.save();
         
         if (!isQABeingForgotten(currentQuestion)) {
-            updateLearntScore();
-            E.publish('lesson.score.change', {data: [currentLesson]})
+            E.publish('qa.memorised', {data: [currentQuestion]});
         }
 
     }
@@ -815,7 +770,8 @@ $$('f_answer').onsubmit = function() {
         recordAnswer(0);
         
         roundQA.push(0);
-        saveLessons();
+        
+        currentLesson.save();
         
         //remember to ask te same question again
         nextQuestion = currentQuestion;
@@ -850,14 +806,13 @@ $('#app_menu a').click(function() {
     switch ($(this).attr('href').substr(1)) {
         
         case '__new__':
-        newLessonName = prompt('Type a name for the lesson');
+        var newLessonName = prompt('Type a name for the lesson');
         if (newLessonName) {
-            
-            currentLesson = createLesson();
-            storeLesson(currentLesson);
-            
-            initLesson(currentLesson);
-            
+
+            var newLesson = new Lesson(newLessonName);
+            newLesson.save();
+            newLesson.start();
+                        
         }
         break;
         
@@ -904,8 +859,7 @@ $('#app_menu a').click(function() {
 function init() {
     compatibilityFixes();
     initStorage();
-    wordsAlreadyKnown();
-    $('.root').addClass('list')
+    listMode();
     
     return;
     //below is the JSON export

@@ -6,7 +6,7 @@ html, body {
 	height: 100%;
 }
 
-p, form {
+p, form, ul {
     margin: 1ex 10%;
     font-size: 200%;
     text-align: center;
@@ -71,6 +71,12 @@ button.check {
     color: red
 }
 
+ul.ui-elem {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
 .memo-status {
 	width: 100%;
 	display: block;
@@ -94,7 +100,7 @@ button.check {
 	float: right;
 }
 
-.open_lesson {
+.lesson-launcher a {
 	display: block;
 	padding: 1ex .6em;
 	line-height: 1em;
@@ -113,7 +119,7 @@ button.check {
     text-overflow: ellipsis;
 }
 
-.open_lesson:before {
+.lesson-launcher a:before {
 	display: 'block';
 	content: ' ';
 	width: 0; height: 0;
@@ -151,4 +157,9 @@ button.check {
 .root.lesson #lesson,
 .root.dialog #dialog {
 	display: block;
+}
+
+#list {
+    margin: 3% 3% 0 3%;
+    border: 1px solid #DDD;
 }

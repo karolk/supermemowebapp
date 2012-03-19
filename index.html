@@ -17,7 +17,7 @@
 <div class="root">
 
 	<div class="screen" id="list">
-		<p class="links_list"></p>
+		<ul class="lesson-list ui-elem"></ul>
 	</div>
 
 	<div id="lesson" class="screen">
@@ -73,15 +73,20 @@
 		<input name="a" autocomplete="off">
 		<button>Save</button>
 	</form>
-	<a href="#" class="open_lesson"></a>
-	<span class="memo-status">
-	    <span class="status-unseen"></span>
-	    <span class="status-need-revision"></span>
-	</span>
+	<ul>
+	    <li class="lesson-launcher">
+            <a href="#" data-templ="name" data-attr="href" data-bind="lesson"></a>
+            <span class="memo-status">
+                <span class="status-unseen"></span>
+                <span class="status-need-revision"></span>
+            </span>
+        </li>
+    <ul>
 </div>
 
 <script src="zepto.min.js"></script>
 <script src="events.js"></script>
+<script src="screens.js"></script>
 <script src="conf.js"></script>
 <script src="main.js"></script>
 
