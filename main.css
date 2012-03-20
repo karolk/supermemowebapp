@@ -137,6 +137,7 @@ ul.ui-elem {
     margin-left: 9%;
     display: inline-block;
     vertical-align: top;
+    font-size: 100%;
 }
 
 .ui-templates {
