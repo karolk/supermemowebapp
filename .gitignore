@@ -4,3 +4,4 @@ test.sh
 offline.manifest
 exampledata*.json
 notes.*
+bundle.*

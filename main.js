@@ -1,11 +1,9 @@
 (function() {
+'use strict';
 var lessons,
     currentLesson,
     currentQuestion,
     correctAnswersBeforeMemorised = 7,
-    liveData= {
-        knownWords: 0
-    },
     dontMindAccents = true,
     roundTimes = [
         conf.millsec.min,
@@ -27,16 +25,24 @@ function compatibilityFixes() {}
 //constructors
 function Lesson(name, qa) {
     
+    var inst = this;
+    
     if ( !(this instanceof Lesson) ) {return new Lesson(name)}
     
     this.name = name;
-    this.qa = qa || [];
     
+    qa = qa || [];
+    
+    this.qa = [];
+    
+    qa.forEach(function( rawQA ) {
+        inst.qa.push( new QA( rawQA) );
+    });
+        
     this.instances.push(this);
         
     E.publish('lesson', {data:[this]});
-    this.triggerMemorizationStatusUpdate();
-    
+        
 }
 
 Lesson.prototype.instances = [];
@@ -66,35 +72,6 @@ Lesson.prototype.remove = function() {
     Lesson.prototype.save();
 }
 
-Lesson.prototype.getMemorizationStatus = function() {
-
-    var ret = {
-        length: this.qa.length,
-        beingForgotten: 0,
-        neverSeen: 0
-    }
-    
-    this.qa.forEach(function(qa) {
-        if (qa.score.length) {
-            if (isQABeingForgotten(qa)) {
-                ret.beingForgotten+=1;
-                return;
-            }
-        }
-        else {
-            ret.neverSeen+=1;
-            return;
-        }
-    });
-    
-    return ret;
-
-}
-
-Lesson.prototype.triggerMemorizationStatusUpdate = function() {
-    E.publish('lesson.score', {data:[this.getMemorizationStatus(), this]})
-}
-
 //REFACTOR
 Lesson.prototype.start = function() {
     currentLesson = this;
@@ -106,7 +83,7 @@ Lesson.prototype.start = function() {
 }
 
 Lesson.prototype.addQA = function() {
-
+    
 }
 
 Lesson.prototype.getRandomQA = function() {
@@ -123,8 +100,45 @@ E.bind('lessons', function(e, lessons) {
     });
 })
 
-function QA() {
+function QA(conf) {
+    
+    if ( !(this instanceof QA) ) {return new QA(conf)}
+    
+    if (conf.q && conf.a) {
+        
+        this.q = conf.q
+        this.a = conf.a
+        this.score = conf.score || []
+        this.c = conf.c || []
 
+    }
+    
+    else {
+        return null;
+    }
+    
+    this.updateMemorisationStatus();
+    
+}
+
+QA.prototype.updateMemorisationStatus = function() {
+    this.memorised = !isQABeingForgotten(this);
+    this.seen = !!this.score.length;
+}
+
+QA.prototype.addScore = function(score) {
+    this.score.push(score);
+    this.updateMemorisationStatus();
+    E.publish('lesson.score', {data: this});
+}
+
+QA.prototype.toJSON = function() {
+    return {
+        q: this.q,
+        a: this.a,
+        score: this.score,
+        c: this.c
+    }
 }
 
 function $$(id) {
@@ -133,11 +147,6 @@ function $$(id) {
 
 function isUndef(o) {
     return typeof o == 'undefined'
-}
-
-//new Lesson
-function createLesson() {
-    return []
 }
 
 //new QA
@@ -174,15 +183,60 @@ function editMode() {
 function listMode() {
     $('.root').attr('class', 'root list');
 }
+
+UI.updateLessonProgress = function($node, lesson) {
+
+    var $status = $node.find('.memo-status'),
+        all = lesson.qa.length,
+        unseen = lesson.qa.filter(function(qa) {
+            return !qa.seen
+        }).length,
+        forgotten = lesson.qa.filter(function(qa) {
+            return !qa.memorised
+        }).length - unseen;
     
+    $status
+    .find('.status-unseen')
+        .css('width', 
+            Math.min(
+                Math.round(unseen/all*100),
+                100
+            )+'%'
+        );
+        
+    $status
+    .find('.status-need-revision')
+        .css('width', 
+            Math.min(
+                Math.round(forgotten/all*100),
+                100
+            )+'%'
+        );
+
+}
+
+UI.updateTotalScore = function() {
+    
+    var total = 0;
+    Lesson.prototype.instances.forEach(function (lesson) {
+        total += lesson.qa.filter(function(qa) {
+            return qa.memorised
+        }).length
+    }); 
+    
+    $('#known_words').text(total);
+    
+}
+
 E.bind('lesson', function(e, lesson) {
+
     var lessonLauncherTempl = $('.lesson-launcher');
     
     var lessonLauncher = $( lessonLauncherTempl[0].cloneNode(true) )
         .template({
             name: lesson.name,
             href: '#'+lesson.name,
-            lesson: lesson,
+            lesson: lesson
         });
         
     lessonLauncher
@@ -196,42 +250,16 @@ E.bind('lesson', function(e, lesson) {
     $('ul.lesson-list')
         .append(lessonLauncher);
     
-    E.bind('lesson.score', function(e, score, updatedLesson) {
-        if (updatedLesson === lesson) {
-        
-            var $node = lessonLauncher.find('.memo-status');
-            
-            $node
-            .find('.status-unseen')
-                .css('width', 
-                    Math.min(
-                        Math.round(score.neverSeen/score.length*100),
-                        100
-                    )+'%'
-                );
-                
-            $node
-            .find('.status-need-revision')
-                .css('width', 
-                    Math.min(
-                        Math.round(score.beingForgotten/score.length*100),
-                        100
-                    )+'%'
-                );
-                
+    E.bind('lesson.score', function(e, qa) {
+        if (currentLesson === lesson) {
+            UI.updateLessonProgress(lessonLauncher, currentLesson)
         }
+        UI.updateTotalScore();
     });
-        
-});
-
-E.bind('lesson.score', function(e, score) {
-    liveData.knownWords += (score.length-score.beingForgotten-score.neverSeen);
-    $('#known_words').text(liveData.knownWords);
-});
-
-E.bind('qa.memorised', function(e, qa) {
-    liveData.knownWords += 1;
-    $('#known_words').text(liveData.knownWords);
+    
+    UI.updateLessonProgress(lessonLauncher, lesson);
+    UI.updateTotalScore();
+    
 });
 
 E.bind('lesson.start', function() {
@@ -298,16 +326,20 @@ function isCycleComplete(cycleAnswers, allScores) {
     var ret = false,
         answersCount = 0,
         correctStreakCount = 0,
-        recentCorrectCount = allScores
+        recentCorrectCount = 0,
+        correctAnswersFiltered = allScores
             .slice() //copy
             .reverse() //reverse
             .slice(0, Math.round(1.5*correctAnswersBeforeMemorised)) //get n first elements
             .map(function(ch) {
                 return ch[1]
-            })
-            .reduce(function(a,b) {
-                return a+b;
-            })
+            });
+            
+    if (correctAnswersFiltered.length) {
+        recentCorrectCount = correctAnswersFiltered.reduce(function(a,b) {
+            return a+b;
+        });
+    }
     
     cycleAnswers.forEach(function(ch) {
     
@@ -514,8 +546,8 @@ function recordAnswer(score) {
     ) {
         currentQuestion.c.push(timestamp)
     }
-    
-    currentQuestion.score.push([timestamp, score])
+        
+    currentQuestion.addScore([timestamp, score])
     
 }
 
@@ -607,7 +639,7 @@ function askQuestion(qa) {
         $('#answer').trigger('focus');
     }    
     else {
-        var message = '<p class="hint">Looks like you have memorized all questions in this lesson. Keep checking the status bar on the main page. It will change color to show you when you need to repeat this lesson.</p>';
+        var message = '<p class="hint">Looks like you have memorised all questions in this lesson. Keep checking the status bar on the main page. It will change color to show you when you need to repeat this lesson.</p>';
         if ( !currentLesson.qa.length ) {
             message = '<p class="hint">Looks like there aren\'t any questions here. Go to edit mode to add some.</p>'
         }
@@ -755,10 +787,6 @@ $$('f_answer').onsubmit = function() {
         roundQA.push(1);
         
         currentLesson.save();
-        
-        if (!isQABeingForgotten(currentQuestion)) {
-            E.publish('qa.memorised', {data: [currentQuestion]});
-        }
 
     }
     else {

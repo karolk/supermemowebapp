@@ -72,7 +72,7 @@ $.fn.template = function(stash) {
             ol: 'li',
             ul: 'li',
             dl: 'dt, dd', //a bit simple
-            table: 'tr',
+            table: 'tr'
         },
         stencil;
         
