@@ -5,4 +5,4 @@ forge.sh
 offline.manifest
 exampledata*.json
 notes.*
-bundle.*
+bundle.min.js
