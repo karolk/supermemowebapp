@@ -1,6 +1,49 @@
 Super memo web app
 ==================
 
+The data lives in an localStorage object called "lessons".
+In order to seed the data run this command in a console:
+
+```js
+localStorage.setItem("lessons", JSON.stringify([
+    {
+        "name": "Spanish",
+        "qa": [
+            {
+                "q": "thank you",
+                "a": "gracias",
+                "scores": [],
+                "c": []
+            },
+            {
+                "q": "you have",
+                "a": "tienes",
+                "scores": [],
+                "c": []
+            },
+            {
+                "q": "where",
+                "a": "dónde",
+                "scores": [],
+                "c": []
+            },
+            {
+                "q": "house",
+                "a": "case",
+                "scores": [],
+                "c": []
+            },
+            {
+                "q": "tiempo",
+                "a": "time",
+                "scores": [],
+                "c": []
+            }
+        ]
+    }
+]))
+```
+
 Data structure
 --------------
 
