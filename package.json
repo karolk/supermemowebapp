@@ -1,0 +1,19 @@
+{
+  "name": "supermemowebapp",
+  "version": "0.0.1",
+  "description": "Super memo web app",
+  "scripts": {
+    "build": "cat ./events.js ./screens.js ./conf.js ./main.js > bundle.min.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/karolk/supermemowebapp.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/karolk/supermemowebapp/issues"
+  },
+  "homepage": "https://github.com/karolk/supermemowebapp#readme"
+}
