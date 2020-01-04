@@ -29,13 +29,13 @@ localStorage.setItem("lessons", JSON.stringify([
             },
             {
                 "q": "house",
-                "a": "case",
+                "a": "casa",
                 "scores": [],
                 "c": []
             },
             {
-                "q": "tiempo",
-                "a": "time",
+                "q": "time",
+                "a": "tiempo",
                 "scores": [],
                 "c": []
             }
